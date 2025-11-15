@@ -33,20 +33,11 @@ func (s *UserService) SetIsActive(userID string, isActive bool) (*domain.User, e
 }
 
 // GetUserReviews returns all pull requests where the user is assigned as a reviewer.
-// Only returns OPEN pull requests.
 func (s *UserService) GetUserReviews(userID string) ([]domain.PullRequestShort, error) {
 	prs, err := pr.GetByUser(s.db, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user reviews: %w", err)
 	}
 
-	// Filter only OPEN PRs
-	openPRs := make([]domain.PullRequestShort, 0)
-	for _, p := range prs {
-		if p.Status == domain.StatusOpen {
-			openPRs = append(openPRs, p)
-		}
-	}
-
-	return openPRs, nil
+	return prs, nil
 }
