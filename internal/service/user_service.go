@@ -24,7 +24,7 @@ func (s *UserService) SetIsActive(userID string, isActive bool) (*domain.User, e
 	u, err := user.SetIsActive(s.db, userID, isActive)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
+			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("failed to update user status: %w", err)
 	}

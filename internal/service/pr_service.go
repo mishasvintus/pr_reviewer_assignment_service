@@ -29,7 +29,7 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 	_, err := user.Get(s.db, authorID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("author not found")
+			return nil, ErrPRAuthorNotFound
 		}
 		return nil, fmt.Errorf("failed to get author: %w", err)
 	}
@@ -60,10 +60,10 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 
 	if err := pr.Create(tx, pullRequest); err != nil {
 		if repository.IsUniqueViolation(err) {
-			return nil, fmt.Errorf("pull request already exists")
+			return nil, ErrPRExists
 		}
 		if repository.IsForeignKeyViolation(err) {
-			return nil, fmt.Errorf("author not found")
+			return nil, ErrPRAuthorNotFound
 		}
 		return nil, fmt.Errorf("failed to create pull request: %w", err)
 	}
@@ -71,7 +71,7 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 	for _, reviewerID := range reviewers {
 		if err := pr.InsertReviewer(tx, prID, reviewerID); err != nil {
 			if repository.IsForeignKeyViolation(err) {
-				return nil, fmt.Errorf("reviewer %s not found", reviewerID)
+				return nil, ErrPRAuthorNotFound
 			}
 			return nil, fmt.Errorf("failed to assign reviewer: %w", err)
 		}
@@ -84,7 +84,7 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 			return nil, fmt.Errorf("failed to verify reviewer %s: %w", reviewerID, err)
 		}
 		if !u.IsActive {
-			return nil, fmt.Errorf("reviewer %s is not active", reviewerID)
+			return nil, ErrInactiveReviewer
 		}
 	}
 
@@ -106,7 +106,7 @@ func (s *PRService) MergePR(prID string) (*domain.PullRequest, error) {
 	pullRequest, err := pr.Get(s.db, prID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("pull request not found")
+			return nil, ErrPRNotFound
 		}
 		return nil, fmt.Errorf("failed to get pull request: %w", err)
 	}
@@ -134,7 +134,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 	pullRequest, err := pr.Get(s.db, prID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, "", fmt.Errorf("pull request not found")
+			return nil, "", ErrPRNotFound
 		}
 		return nil, "", fmt.Errorf("failed to get pull request: %w", err)
 	}
@@ -151,7 +151,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 
 	newReviewers, err := s.assigner.SelectReassignReviewers(teammates, excludeIDs)
 	if err != nil || len(newReviewers) == 0 {
-		return nil, "", fmt.Errorf("no candidates available for reassignment")
+		return nil, "", ErrNoCandidate
 	}
 	newReviewerID := newReviewers[0]
 
@@ -164,13 +164,13 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 	status, err := pr.GetStatus(tx, prID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, "", fmt.Errorf("pull request not found")
+			return nil, "", ErrPRNotFound
 		}
 		return nil, "", fmt.Errorf("failed to check PR status: %w", err)
 	}
 
 	if status != domain.StatusOpen {
-		return nil, "", fmt.Errorf("cannot reassign merged pull request")
+		return nil, "", ErrPRMerged
 	}
 
 	isAssigned, err := pr.IsReviewerAssigned(tx, prID, oldReviewerID)
@@ -179,7 +179,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 	}
 
 	if !isAssigned {
-		return nil, "", fmt.Errorf("user is not assigned to this pull request")
+		return nil, "", ErrReviewerNotAssigned
 	}
 
 	if err := pr.DeleteReviewer(tx, prID, oldReviewerID); err != nil {
@@ -188,7 +188,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 
 	if err := pr.InsertReviewer(tx, prID, newReviewerID); err != nil {
 		if repository.IsForeignKeyViolation(err) {
-			return nil, "", fmt.Errorf("reviewer %s not found", newReviewerID)
+			return nil, "", ErrPRAuthorNotFound
 		}
 		return nil, "", fmt.Errorf("failed to assign reviewer: %w", err)
 	}
@@ -199,7 +199,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 		return nil, "", fmt.Errorf("failed to verify reviewer %s: %w", newReviewerID, err)
 	}
 	if !u.IsActive {
-		return nil, "", fmt.Errorf("reviewer %s is not active", newReviewerID)
+		return nil, "", ErrInactiveReviewer
 	}
 
 	if err := tx.Commit(); err != nil {

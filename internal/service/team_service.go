@@ -33,7 +33,7 @@ func (s *TeamService) CreateTeam(teamName string, members []domain.TeamMember) e
 		return fmt.Errorf("failed to check team existence: %w", err)
 	}
 	if exists {
-		return fmt.Errorf("team already exists")
+		return ErrTeamExists
 	}
 
 	// Create team
@@ -79,7 +79,7 @@ func (s *TeamService) GetTeam(teamName string) (*domain.Team, error) {
 	t, err := team.Get(s.db, teamName)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("team not found")
+			return nil, ErrTeamNotFound
 		}
 		return nil, fmt.Errorf("failed to get team: %w", err)
 	}
