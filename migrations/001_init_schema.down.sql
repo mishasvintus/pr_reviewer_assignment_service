@@ -1,0 +1,6 @@
+-- Drop tables in reverse order due to foreign key constraints
+DROP TABLE IF EXISTS pr_reviewers CASCADE;
+DROP TABLE IF EXISTS pull_requests CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS teams CASCADE;
+
