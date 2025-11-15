@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/mishasvintus/avito_backend_internship/internal/domain"
 )
 
@@ -46,6 +47,26 @@ func (r *PRRepository) Create(pr *domain.PullRequest) error {
 		_, err := tx.Exec(reviewerQuery, pr.PullRequestID, reviewerID)
 		if err != nil {
 			return fmt.Errorf("failed to assign reviewer %s: %w", reviewerID, err)
+		}
+	}
+
+	// Verify all assigned reviewers are still active
+	if len(pr.AssignedReviewers) > 0 {
+		checkQuery := `
+			SELECT user_id 
+			FROM users 
+			WHERE user_id = ANY($1) AND is_active = false
+		`
+		rows, err := tx.Query(checkQuery, pq.Array(pr.AssignedReviewers))
+		if err != nil {
+			return fmt.Errorf("failed to verify reviewers: %w", err)
+		}
+		defer rows.Close()
+
+		if rows.Next() {
+			var inactiveUserID string
+			rows.Scan(&inactiveUserID)
+			return &ErrInactiveReviewer{UserID: inactiveUserID}
 		}
 	}
 
@@ -166,12 +187,40 @@ func (r *PRRepository) Merge(prID string) error {
 }
 
 // Reassign replaces assigned reviewers for a pull request.
-func (r *PRRepository) Reassign(prID string, newReviewers []string) error {
+// Verifies that PR is not merged and requester is currently assigned.
+func (r *PRRepository) Reassign(prID, requesterID string, newReviewers []string) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
+
+	// Check PR status (must be OPEN)
+	var status string
+	statusQuery := `SELECT status FROM pull_requests WHERE pull_request_id = $1`
+	err = tx.QueryRow(statusQuery, prID).Scan(&status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return err
+		}
+		return fmt.Errorf("failed to check PR status: %w", err)
+	}
+
+	if status != "OPEN" {
+		return fmt.Errorf("cannot reassign merged pull request")
+	}
+
+	// Check requester is currently assigned
+	var exists bool
+	checkQuery := `SELECT EXISTS(SELECT 1 FROM pr_reviewers WHERE pull_request_id = $1 AND user_id = $2)`
+	err = tx.QueryRow(checkQuery, prID, requesterID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check reviewer assignment: %w", err)
+	}
+
+	if !exists {
+		return fmt.Errorf("user %s is not assigned to this pull request", requesterID)
+	}
 
 	// Delete old reviewers
 	deleteQuery := `DELETE FROM pr_reviewers WHERE pull_request_id = $1`
@@ -186,6 +235,26 @@ func (r *PRRepository) Reassign(prID string, newReviewers []string) error {
 		_, err := tx.Exec(insertQuery, prID, reviewerID)
 		if err != nil {
 			return fmt.Errorf("failed to assign new reviewer %s: %w", reviewerID, err)
+		}
+	}
+
+	// Verify new reviewers are active
+	if len(newReviewers) > 0 {
+		checkActiveQuery := `
+			SELECT user_id 
+			FROM users 
+			WHERE user_id = ANY($1) AND is_active = false
+		`
+		rows, err := tx.Query(checkActiveQuery, pq.Array(newReviewers))
+		if err != nil {
+			return fmt.Errorf("failed to verify reviewers: %w", err)
+		}
+		defer rows.Close()
+
+		if rows.Next() {
+			var inactiveUserID string
+			rows.Scan(&inactiveUserID)
+			return &ErrInactiveReviewer{UserID: inactiveUserID}
 		}
 	}
 

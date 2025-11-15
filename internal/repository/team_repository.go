@@ -88,3 +88,35 @@ func (r *TeamRepository) Exists(teamName string) (bool, error) {
 	}
 	return exists, nil
 }
+
+// CreateWithMembers creates a team with members in a single transaction.
+// This ensures atomicity - either everything is created or nothing.
+func (r *TeamRepository) CreateWithMembers(teamName string, users []domain.User) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Create team
+	teamQuery := `INSERT INTO teams (team_name) VALUES ($1)`
+	_, err = tx.Exec(teamQuery, teamName)
+	if err != nil {
+		return fmt.Errorf("failed to create team: %w", err)
+	}
+
+	// Create users
+	userQuery := `INSERT INTO users (user_id, username, team_name, is_active) VALUES ($1, $2, $3, $4)`
+	for _, user := range users {
+		_, err := tx.Exec(userQuery, user.UserID, user.Username, user.TeamName, user.IsActive)
+		if err != nil {
+			return fmt.Errorf("failed to create user %s: %w", user.UserID, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}

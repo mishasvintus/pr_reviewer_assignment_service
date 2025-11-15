@@ -85,24 +85,29 @@ func (r *UserRepository) Get(userID string) (*domain.User, error) {
 	return &user, nil
 }
 
-// SetIsActive updates the is_active status of a user.
-func (r *UserRepository) SetIsActive(userID string, isActive bool) error {
-	query := `UPDATE users SET is_active = $1 WHERE user_id = $2`
-	result, err := r.db.Exec(query, isActive, userID)
+// SetIsActive updates the is_active status of a user and returns the updated user.
+func (r *UserRepository) SetIsActive(userID string, isActive bool) (*domain.User, error) {
+	query := `
+		UPDATE users 
+		SET is_active = $1 
+		WHERE user_id = $2 
+		RETURNING user_id, username, team_name, is_active
+	`
+	var user domain.User
+	err := r.db.QueryRow(query, isActive, userID).Scan(
+		&user.UserID,
+		&user.Username,
+		&user.TeamName,
+		&user.IsActive,
+	)
 	if err != nil {
-		return fmt.Errorf("failed to update user status: %w", err)
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to update user status: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return &user, nil
 }
 
 // Exists checks if a user exists.
