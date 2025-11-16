@@ -206,4 +206,3 @@ func TestPRStatus_Value(t *testing.T) {
 		})
 	}
 }
-
