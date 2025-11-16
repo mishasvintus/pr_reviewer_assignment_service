@@ -82,7 +82,6 @@ func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	// Status is automatically validated via PRStatus.Scan() method
 	p.AssignedReviewers = reviewers
 	return &p, nil
 }

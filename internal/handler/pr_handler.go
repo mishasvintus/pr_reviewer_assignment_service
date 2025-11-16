@@ -13,11 +13,11 @@ import (
 
 // PRHandler handles pull request-related HTTP requests.
 type PRHandler struct {
-	prService *service.PRService
+	prService PRServiceInterface
 }
 
 // NewPRHandler creates a new PR handler.
-func NewPRHandler(prService *service.PRService) *PRHandler {
+func NewPRHandler(prService PRServiceInterface) *PRHandler {
 	return &PRHandler{prService: prService}
 }
 

@@ -11,11 +11,11 @@ import (
 
 // TeamHandler handles team-related HTTP requests.
 type TeamHandler struct {
-	teamService *service.TeamService
+	teamService TeamServiceInterface
 }
 
 // NewTeamHandler creates a new team handler.
-func NewTeamHandler(teamService *service.TeamService) *TeamHandler {
+func NewTeamHandler(teamService TeamServiceInterface) *TeamHandler {
 	return &TeamHandler{teamService: teamService}
 }
 
