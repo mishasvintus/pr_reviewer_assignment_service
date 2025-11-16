@@ -68,6 +68,52 @@ func (_c *MockTeamServiceInterface_CreateTeam_Call) RunAndReturn(run func(string
 	return _c
 }
 
+// DeactivateTeam provides a mock function with given fields: teamName
+func (_m *MockTeamServiceInterface) DeactivateTeam(teamName string) error {
+	ret := _m.Called(teamName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeactivateTeam")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(teamName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockTeamServiceInterface_DeactivateTeam_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeactivateTeam'
+type MockTeamServiceInterface_DeactivateTeam_Call struct {
+	*mock.Call
+}
+
+// DeactivateTeam is a helper method to define mock.On call
+//   - teamName string
+func (_e *MockTeamServiceInterface_Expecter) DeactivateTeam(teamName interface{}) *MockTeamServiceInterface_DeactivateTeam_Call {
+	return &MockTeamServiceInterface_DeactivateTeam_Call{Call: _e.mock.On("DeactivateTeam", teamName)}
+}
+
+func (_c *MockTeamServiceInterface_DeactivateTeam_Call) Run(run func(teamName string)) *MockTeamServiceInterface_DeactivateTeam_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockTeamServiceInterface_DeactivateTeam_Call) Return(_a0 error) *MockTeamServiceInterface_DeactivateTeam_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockTeamServiceInterface_DeactivateTeam_Call) RunAndReturn(run func(string) error) *MockTeamServiceInterface_DeactivateTeam_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTeam provides a mock function with given fields: teamName
 func (_m *MockTeamServiceInterface) GetTeam(teamName string) (*domain.Team, error) {
 	ret := _m.Called(teamName)

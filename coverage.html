@@ -1,0 +1,2019 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>domain: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/mishasvintus/avito_backend_internship/internal/domain/pull_request.go (100.0%)</option>
+				
+				<option value="file1">github.com/mishasvintus/avito_backend_internship/internal/handler/pr_handler.go (100.0%)</option>
+				
+				<option value="file2">github.com/mishasvintus/avito_backend_internship/internal/handler/response.go (100.0%)</option>
+				
+				<option value="file3">github.com/mishasvintus/avito_backend_internship/internal/handler/stats_handler.go (100.0%)</option>
+				
+				<option value="file4">github.com/mishasvintus/avito_backend_internship/internal/handler/team_handler.go (100.0%)</option>
+				
+				<option value="file5">github.com/mishasvintus/avito_backend_internship/internal/handler/user_handler.go (100.0%)</option>
+				
+				<option value="file6">github.com/mishasvintus/avito_backend_internship/internal/repository/db.go (0.0%)</option>
+				
+				<option value="file7">github.com/mishasvintus/avito_backend_internship/internal/repository/errors.go (27.3%)</option>
+				
+				<option value="file8">github.com/mishasvintus/avito_backend_internship/internal/repository/pr/open_with_reviewers.go (78.6%)</option>
+				
+				<option value="file9">github.com/mishasvintus/avito_backend_internship/internal/repository/pr/pr.go (69.3%)</option>
+				
+				<option value="file10">github.com/mishasvintus/avito_backend_internship/internal/repository/stats/stats.go (79.4%)</option>
+				
+				<option value="file11">github.com/mishasvintus/avito_backend_internship/internal/repository/team/team.go (80.6%)</option>
+				
+				<option value="file12">github.com/mishasvintus/avito_backend_internship/internal/repository/user/user.go (70.6%)</option>
+				
+				<option value="file13">github.com/mishasvintus/avito_backend_internship/internal/service/pr_service.go (67.3%)</option>
+				
+				<option value="file14">github.com/mishasvintus/avito_backend_internship/internal/service/reviewer_assigner.go (87.5%)</option>
+				
+				<option value="file15">github.com/mishasvintus/avito_backend_internship/internal/service/stats_service.go (72.7%)</option>
+				
+				<option value="file16">github.com/mishasvintus/avito_backend_internship/internal/service/team_service.go (71.0%)</option>
+				
+				<option value="file17">github.com/mishasvintus/avito_backend_internship/internal/service/user_service.go (81.8%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package domain
+
+import (
+        "database/sql/driver"
+        "fmt"
+        "time"
+)
+
+// PRStatus represents the status of a pull request.
+type PRStatus string
+
+// PR status constants.
+const (
+        StatusOpen   PRStatus = "OPEN"
+        StatusMerged PRStatus = "MERGED"
+)
+
+// NewPRStatus creates a new PRStatus with validation.
+// Returns an error if the status is invalid.
+func NewPRStatus(s string) (PRStatus, error) <span class="cov8" title="1">{
+        status := PRStatus(s)
+        if !status.IsValid() </span><span class="cov8" title="1">{
+                return "", fmt.Errorf("invalid PR status: %s (must be one of: %s, %s)", s, StatusOpen, StatusMerged)
+        }</span>
+        <span class="cov8" title="1">return status, nil</span>
+}
+
+// IsValid checks if the status is valid.
+func (s PRStatus) IsValid() bool <span class="cov8" title="1">{
+        return s == StatusOpen || s == StatusMerged
+}</span>
+
+// Scan implements sql.Scanner interface for automatic validation when reading from database.
+func (s *PRStatus) Scan(value any) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("PRStatus cannot be NULL")
+        }</span>
+
+        <span class="cov8" title="1">var str string
+        switch v := value.(type) </span>{
+        case string:<span class="cov8" title="1">
+                str = v</span>
+        case []byte:<span class="cov8" title="1">
+                str = string(v)</span>
+        default:<span class="cov8" title="1">
+                return fmt.Errorf("cannot scan %T into PRStatus", value)</span>
+        }
+
+        <span class="cov8" title="1">status, err := NewPRStatus(str)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">*s = status
+        return nil</span>
+}
+
+// Value implements driver.Valuer interface for writing to database.
+func (s PRStatus) Value() (driver.Value, error) <span class="cov8" title="1">{
+        if !s.IsValid() </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid PRStatus value: %s", s)
+        }</span>
+        <span class="cov8" title="1">return string(s), nil</span>
+}
+
+// PullRequest represents a pull request with assigned reviewers.
+type PullRequest struct {
+        PullRequestID     string     `json:"pull_request_id" db:"pull_request_id"`
+        PullRequestName   string     `json:"pull_request_name" db:"pull_request_name"`
+        AuthorID          string     `json:"author_id" db:"author_id"`
+        Status            PRStatus   `json:"status" db:"status"`
+        AssignedReviewers []string   `json:"assigned_reviewers"`
+        CreatedAt         *time.Time `json:"createdAt,omitempty" db:"created_at"`
+        MergedAt          *time.Time `json:"mergedAt,omitempty" db:"merged_at"`
+}
+
+// PullRequestShort is a lightweight version of PullRequest for lists.
+type PullRequestShort struct {
+        PullRequestID   string   `json:"pull_request_id"`
+        PullRequestName string   `json:"pull_request_name"`
+        AuthorID        string   `json:"author_id"`
+        Status          PRStatus `json:"status"`
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package handler
+
+import (
+        "errors"
+        "net/http"
+        "time"
+
+        "github.com/gin-gonic/gin"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/service"
+)
+
+// PRHandler handles pull request-related HTTP requests.
+type PRHandler struct {
+        prService PRServiceInterface
+}
+
+// NewPRHandler creates a new PR handler.
+func NewPRHandler(prService PRServiceInterface) *PRHandler <span class="cov8" title="1">{
+        return &amp;PRHandler{prService: prService}
+}</span>
+
+// CreatePR handles POST /pullRequest/create.
+func (h *PRHandler) CreatePR(c *gin.Context) <span class="cov8" title="1">{
+        var req CreatePRRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">pr, err := h.prService.CreatePR(req.PullRequestID, req.PullRequestName, req.AuthorID)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrPRExists) </span><span class="cov8" title="1">{
+                        Conflict(c, ErrorPRExists, "PR id already exists")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrPRAuthorNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "author or team not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrInactiveReviewer) </span><span class="cov8" title="1">{
+                        BadRequest(c, err.Error())
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">c.JSON(http.StatusCreated, SuccessResponse{
+                PR: domainToPRResponse(pr),
+        })</span>
+}
+
+// MergePR handles POST /pullRequest/merge.
+func (h *PRHandler) MergePR(c *gin.Context) <span class="cov8" title="1">{
+        var req MergePRRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">pr, err := h.prService.MergePR(req.PullRequestID)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrPRNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "pull request not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, SuccessResponse{
+                PR: domainToPRResponse(pr),
+        })</span>
+}
+
+// ReassignPR handles POST /pullRequest/reassign.
+func (h *PRHandler) ReassignPR(c *gin.Context) <span class="cov8" title="1">{
+        var req ReassignPRRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">pr, replacedBy, err := h.prService.ReassignPR(req.PullRequestID, req.OldUserID)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrPRNotFound) || errors.Is(err, service.ErrPRAuthorNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "pull request or user not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrPRMerged) </span><span class="cov8" title="1">{
+                        Conflict(c, ErrorPRMerged, "cannot reassign on merged PR")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrReviewerNotAssigned) </span><span class="cov8" title="1">{
+                        Conflict(c, ErrorNotAssigned, "reviewer is not assigned to this PR")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrNoCandidate) </span><span class="cov8" title="1">{
+                        Conflict(c, ErrorNoCandidate, "no active replacement candidate in team")
+                        return
+                }</span>
+                <span class="cov8" title="1">if errors.Is(err, service.ErrInactiveReviewer) </span><span class="cov8" title="1">{
+                        BadRequest(c, err.Error())
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, ReassignResponse{
+                PR:         domainToPRResponse(pr),
+                ReplacedBy: replacedBy,
+        })</span>
+}
+
+// domainToPRResponse converts domain.PullRequest to PRResponse.
+func domainToPRResponse(pr *domain.PullRequest) *PRResponse <span class="cov8" title="1">{
+        resp := &amp;PRResponse{
+                PullRequestID:     pr.PullRequestID,
+                PullRequestName:   pr.PullRequestName,
+                AuthorID:          pr.AuthorID,
+                Status:            string(pr.Status),
+                AssignedReviewers: pr.AssignedReviewers,
+        }
+
+        if pr.CreatedAt != nil </span><span class="cov8" title="1">{
+                resp.CreatedAt = pr.CreatedAt.Format(time.RFC3339)
+        }</span>
+        <span class="cov8" title="1">if pr.MergedAt != nil </span><span class="cov8" title="1">{
+                resp.MergedAt = pr.MergedAt.Format(time.RFC3339)
+        }</span>
+
+        <span class="cov8" title="1">return resp</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+)
+
+// ErrorCode represents error codes from OpenAPI spec.
+type ErrorCode string
+
+const (
+        ErrorTeamExists  ErrorCode = "TEAM_EXISTS"
+        ErrorPRExists    ErrorCode = "PR_EXISTS"
+        ErrorPRMerged    ErrorCode = "PR_MERGED"
+        ErrorNotAssigned ErrorCode = "NOT_ASSIGNED"
+        ErrorNoCandidate ErrorCode = "NO_CANDIDATE"
+        ErrorNotFound    ErrorCode = "NOT_FOUND"
+)
+
+// ErrorResponse represents error response structure.
+type ErrorResponse struct {
+        Error struct {
+                Code    ErrorCode `json:"code"`
+                Message string    `json:"message"`
+        } `json:"error"`
+}
+
+// SuccessResponse represents success response structure.
+type SuccessResponse struct {
+        Team *TeamResponse `json:"team,omitempty"`
+        User *UserResponse `json:"user,omitempty"`
+        PR   *PRResponse   `json:"pr,omitempty"`
+}
+
+// TeamResponse wraps team data.
+type TeamResponse struct {
+        TeamName string       `json:"team_name"`
+        Members  []TeamMember `json:"members"`
+}
+
+// TeamMember represents a team member in response.
+type TeamMember struct {
+        UserID   string `json:"user_id"`
+        Username string `json:"username"`
+        IsActive bool   `json:"is_active"`
+}
+
+// UserResponse wraps user data.
+type UserResponse struct {
+        UserID   string `json:"user_id"`
+        Username string `json:"username"`
+        TeamName string `json:"team_name"`
+        IsActive bool   `json:"is_active"`
+}
+
+// PRResponse wraps pull request data.
+type PRResponse struct {
+        PullRequestID     string   `json:"pull_request_id"`
+        PullRequestName   string   `json:"pull_request_name"`
+        AuthorID          string   `json:"author_id"`
+        Status            string   `json:"status"`
+        AssignedReviewers []string `json:"assigned_reviewers"`
+        CreatedAt         string   `json:"createdAt,omitempty"`
+        MergedAt          string   `json:"mergedAt,omitempty"`
+}
+
+// ReassignResponse wraps reassign response.
+type ReassignResponse struct {
+        PR         *PRResponse `json:"pr"`
+        ReplacedBy string      `json:"replaced_by"`
+}
+
+// GetReviewResponse wraps get review response.
+type GetReviewResponse struct {
+        UserID       string            `json:"user_id"`
+        PullRequests []PRShortResponse `json:"pull_requests"`
+}
+
+// PRShortResponse represents short PR in response.
+type PRShortResponse struct {
+        PullRequestID   string `json:"pull_request_id"`
+        PullRequestName string `json:"pull_request_name"`
+        AuthorID        string `json:"author_id"`
+        Status          string `json:"status"`
+}
+
+// StatisticsResponse wraps statistics response.
+type StatisticsResponse struct {
+        Overall struct {
+                TotalPRs         int64 `json:"total_prs"`
+                TotalAssignments int64 `json:"total_assignments"`
+                TotalUsers       int64 `json:"total_users"`
+                TotalTeams       int64 `json:"total_teams"`
+        } `json:"overall"`
+        ReviewerStats []ReviewerStatResponse `json:"reviewer_stats"`
+        AuthorStats   []AuthorStatResponse   `json:"author_stats"`
+}
+
+// ReviewerStatResponse represents reviewer statistics in response.
+type ReviewerStatResponse struct {
+        UserID   string `json:"user_id"`
+        Username string `json:"username"`
+        Count    int64  `json:"count"`
+}
+
+// AuthorStatResponse represents author statistics in response.
+type AuthorStatResponse struct {
+        UserID   string `json:"user_id"`
+        Username string `json:"username"`
+        Count    int64  `json:"count"`
+}
+
+// Error sends error response.
+func Error(c *gin.Context, code ErrorCode, message string, statusCode int) <span class="cov8" title="1">{
+        c.JSON(statusCode, ErrorResponse{
+                Error: struct {
+                        Code    ErrorCode `json:"code"`
+                        Message string    `json:"message"`
+                }{
+                        Code:    code,
+                        Message: message,
+                },
+        })
+}</span>
+
+// NotFound sends 404 error.
+func NotFound(c *gin.Context, message string) <span class="cov8" title="1">{
+        Error(c, ErrorNotFound, message, http.StatusNotFound)
+}</span>
+
+// Conflict sends 409 error.
+func Conflict(c *gin.Context, code ErrorCode, message string) <span class="cov8" title="1">{
+        Error(c, code, message, http.StatusConflict)
+}</span>
+
+// BadRequest sends 400 error.
+func BadRequest(c *gin.Context, message string) <span class="cov8" title="1">{
+        c.JSON(http.StatusBadRequest, ErrorResponse{
+                Error: struct {
+                        Code    ErrorCode `json:"code"`
+                        Message string    `json:"message"`
+                }{
+                        Code:    "",
+                        Message: message,
+                },
+        })
+}</span>
+
+// InternalError sends 500 error.
+func InternalError(c *gin.Context, message string) <span class="cov8" title="1">{
+        c.JSON(http.StatusInternalServerError, ErrorResponse{
+                Error: struct {
+                        Code    ErrorCode `json:"code"`
+                        Message string    `json:"message"`
+                }{
+                        Code:    "",
+                        Message: message,
+                },
+        })
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/service"
+)
+
+// StatsHandler handles statistics HTTP requests.
+type StatsHandler struct {
+        statsService StatsServiceInterface
+}
+
+// StatsServiceInterface defines the interface for statistics operations.
+type StatsServiceInterface interface {
+        GetStatistics() (*service.Statistics, error)
+}
+
+// NewStatsHandler creates a new stats handler.
+func NewStatsHandler(statsService StatsServiceInterface) *StatsHandler <span class="cov8" title="1">{
+        return &amp;StatsHandler{statsService: statsService}
+}</span>
+
+// GetStatistics handles GET /stats.
+func (h *StatsHandler) GetStatistics(c *gin.Context) <span class="cov8" title="1">{
+        stats, err := h.statsService.GetStatistics()
+        if err != nil </span><span class="cov8" title="1">{
+                InternalError(c, err.Error())
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := StatisticsResponse{
+                Overall: struct {
+                        TotalPRs         int64 `json:"total_prs"`
+                        TotalAssignments int64 `json:"total_assignments"`
+                        TotalUsers       int64 `json:"total_users"`
+                        TotalTeams       int64 `json:"total_teams"`
+                }{
+                        TotalPRs:         stats.Overall.TotalPRs,
+                        TotalAssignments: stats.Overall.TotalAssignments,
+                        TotalUsers:       stats.Overall.TotalUsers,
+                        TotalTeams:       stats.Overall.TotalTeams,
+                },
+                ReviewerStats: make([]ReviewerStatResponse, len(stats.ReviewerStats)),
+                AuthorStats:   make([]AuthorStatResponse, len(stats.AuthorStats)),
+        }
+
+        for i, rs := range stats.ReviewerStats </span><span class="cov8" title="1">{
+                response.ReviewerStats[i] = ReviewerStatResponse{
+                        UserID:   rs.UserID,
+                        Username: rs.Username,
+                        Count:    rs.Count,
+                }
+        }</span>
+
+        <span class="cov8" title="1">for i, as := range stats.AuthorStats </span><span class="cov8" title="1">{
+                response.AuthorStats[i] = AuthorStatResponse{
+                        UserID:   as.UserID,
+                        Username: as.Username,
+                        Count:    as.Count,
+                }
+        }</span>
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, response)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handler
+
+import (
+        "errors"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/service"
+)
+
+// TeamHandler handles team-related HTTP requests.
+type TeamHandler struct {
+        teamService TeamServiceInterface
+}
+
+// NewTeamHandler creates a new team handler.
+func NewTeamHandler(teamService TeamServiceInterface) *TeamHandler <span class="cov8" title="1">{
+        return &amp;TeamHandler{teamService: teamService}
+}</span>
+
+// AddTeam handles POST /team/add.
+func (h *TeamHandler) AddTeam(c *gin.Context) <span class="cov8" title="1">{
+        var req AddTeamRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := h.teamService.CreateTeam(req.TeamName, req.Members)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrTeamExists) </span><span class="cov8" title="1">{
+                        Error(c, ErrorTeamExists, "team_name already exists", http.StatusBadRequest)
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">team, err := h.teamService.GetTeam(req.TeamName)
+        if err != nil </span><span class="cov8" title="1">{
+                InternalError(c, "failed to retrieve created team")
+                return
+        }</span>
+
+        <span class="cov8" title="1">members := make([]TeamMember, len(team.Members))
+        for i, m := range team.Members </span><span class="cov8" title="1">{
+                members[i] = TeamMember{
+                        UserID:   m.UserID,
+                        Username: m.Username,
+                        IsActive: m.IsActive,
+                }
+        }</span>
+
+        <span class="cov8" title="1">c.JSON(http.StatusCreated, SuccessResponse{
+                Team: &amp;TeamResponse{
+                        TeamName: team.TeamName,
+                        Members:  members,
+                },
+        })</span>
+}
+
+// GetTeam handles GET /team/get.
+func (h *TeamHandler) GetTeam(c *gin.Context) <span class="cov8" title="1">{
+        teamName := c.Query("team_name")
+        if teamName == "" </span><span class="cov8" title="1">{
+                BadRequest(c, "team_name parameter is required")
+                return
+        }</span>
+
+        <span class="cov8" title="1">team, err := h.teamService.GetTeam(teamName)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrTeamNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "team not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">members := make([]TeamMember, len(team.Members))
+        for i, m := range team.Members </span><span class="cov8" title="1">{
+                members[i] = TeamMember{
+                        UserID:   m.UserID,
+                        Username: m.Username,
+                        IsActive: m.IsActive,
+                }
+        }</span>
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, TeamResponse{
+                TeamName: team.TeamName,
+                Members:  members,
+        })</span>
+}
+
+// DeactivateTeam handles POST /team/deactivate.
+func (h *TeamHandler) DeactivateTeam(c *gin.Context) <span class="cov8" title="1">{
+        var req DeactivateTeamRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := h.teamService.DeactivateTeam(req.TeamName)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrTeamNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "team not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, gin.H{"message": "team deactivated successfully"})</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package handler
+
+import (
+        "errors"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/service"
+)
+
+// UserHandler handles user-related HTTP requests.
+type UserHandler struct {
+        userService UserServiceInterface
+}
+
+// NewUserHandler creates a new user handler.
+func NewUserHandler(userService UserServiceInterface) *UserHandler <span class="cov8" title="1">{
+        return &amp;UserHandler{userService: userService}
+}</span>
+
+// SetIsActive handles POST /users/setIsActive.
+func (h *UserHandler) SetIsActive(c *gin.Context) <span class="cov8" title="1">{
+        var req SetIsActiveRequest
+
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
+                BadRequest(c, "invalid request body")
+                return
+        }</span>
+
+        <span class="cov8" title="1">user, err := h.userService.SetIsActive(req.UserID, *req.IsActive)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, service.ErrUserNotFound) </span><span class="cov8" title="1">{
+                        NotFound(c, "user not found")
+                        return
+                }</span>
+                <span class="cov8" title="1">InternalError(c, err.Error())
+                return</span>
+        }
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, SuccessResponse{
+                User: &amp;UserResponse{
+                        UserID:   user.UserID,
+                        Username: user.Username,
+                        TeamName: user.TeamName,
+                        IsActive: user.IsActive,
+                },
+        })</span>
+}
+
+// GetReview handles GET /users/getReview.
+func (h *UserHandler) GetReview(c *gin.Context) <span class="cov8" title="1">{
+        userID := c.Query("user_id")
+        if userID == "" </span><span class="cov8" title="1">{
+                BadRequest(c, "user_id parameter is required")
+                return
+        }</span>
+
+        <span class="cov8" title="1">prs, err := h.userService.GetUserReviews(userID)
+        if err != nil </span><span class="cov8" title="1">{
+                InternalError(c, err.Error())
+                return
+        }</span>
+
+        // Convert domain.PullRequestShort to response format
+        <span class="cov8" title="1">prResponses := make([]PRShortResponse, len(prs))
+        for i, p := range prs </span><span class="cov8" title="1">{
+                prResponses[i] = PRShortResponse{
+                        PullRequestID:   p.PullRequestID,
+                        PullRequestName: p.PullRequestName,
+                        AuthorID:        p.AuthorID,
+                        Status:          string(p.Status),
+                }
+        }</span>
+
+        <span class="cov8" title="1">c.JSON(http.StatusOK, GetReviewResponse{
+                UserID:       userID,
+                PullRequests: prResponses,
+        })</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package repository
+
+import (
+        "database/sql"
+        "fmt"
+        "time"
+
+        _ "github.com/lib/pq" // PostgreSQL driver
+)
+
+// NewPostgresDB creates and returns a new PostgreSQL database connection.
+func NewPostgresDB(dsn string) (*sql.DB, error) <span class="cov0" title="0">{
+        db, err := sql.Open("postgres", dsn)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open database connection: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">db.SetMaxOpenConns(25)
+        db.SetMaxIdleConns(25)
+        db.SetConnMaxLifetime(5 * time.Minute)
+
+        if err = db.Ping(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to ping database: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return db, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package repository
+
+import (
+        "errors"
+        "fmt"
+
+        "github.com/lib/pq"
+)
+
+// IsUniqueViolation checks if the error is a PostgreSQL unique constraint violation.
+// PostgreSQL error code 23505 = unique_violation.
+func IsUniqueViolation(err error) bool <span class="cov8" title="1">{
+        var pqErr *pq.Error
+        if errors.As(err, &amp;pqErr) </span><span class="cov8" title="1">{
+                return pqErr.Code == "23505"
+        }</span>
+        <span class="cov0" title="0">return false</span>
+}
+
+// IsForeignKeyViolation checks if the error is a PostgreSQL foreign key violation.
+// PostgreSQL error code 23503 = foreign_key_violation.
+func IsForeignKeyViolation(err error) bool <span class="cov0" title="0">{
+        var pqErr *pq.Error
+        if errors.As(err, &amp;pqErr) </span><span class="cov0" title="0">{
+                return pqErr.Code == "23503"
+        }</span>
+        <span class="cov0" title="0">return false</span>
+}
+
+// ErrInactiveReviewer is returned when trying to assign an inactive user as a reviewer.
+type ErrInactiveReviewer struct {
+        UserID string
+}
+
+func (e *ErrInactiveReviewer) Error() string <span class="cov0" title="0">{
+        return fmt.Sprintf("reviewer %s is not active", e.UserID)
+}</span>
+
+// IsInactiveReviewer checks if the error is an inactive reviewer error.
+func IsInactiveReviewer(err error) bool <span class="cov0" title="0">{
+        var inactiveErr *ErrInactiveReviewer
+        return errors.As(err, &amp;inactiveErr)
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package pr
+
+import (
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+)
+
+// PRWithReviewer represents a PR with one of its reviewers.
+type PRWithReviewer struct {
+        PullRequestID string
+        AuthorID      string
+        ReviewerID    string
+}
+
+// GetOpenPRsWithReviewersFromTeam returns all open PRs that have at least one reviewer from the specified team.
+func GetOpenPRsWithReviewersFromTeam(exec repository.DBTX, teamName string) ([]PRWithReviewer, error) <span class="cov8" title="1">{
+        query := `
+                SELECT DISTINCT pr.pull_request_id, pr.author_id, rev.user_id as reviewer_id
+                FROM pull_requests pr
+                JOIN pr_reviewers rev ON pr.pull_request_id = rev.pull_request_id
+                JOIN users u ON rev.user_id = u.user_id
+                WHERE pr.status = 'OPEN' AND u.team_name = $1
+        `
+        rows, err := exec.Query(query, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get open PRs with reviewers from team: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var result []PRWithReviewer
+        for rows.Next() </span><span class="cov8" title="1">{
+                var item PRWithReviewer
+                if err := rows.Scan(&amp;item.PullRequestID, &amp;item.AuthorID, &amp;item.ReviewerID); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan PR with reviewer: %w", err)
+                }</span>
+                <span class="cov8" title="1">result = append(result, item)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return result, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package pr
+
+import (
+        "database/sql"
+        "fmt"
+        "time"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+)
+
+// Create inserts a new pull request.
+func Create(exec repository.DBTX, pr *domain.PullRequest) error <span class="cov8" title="1">{
+        query := `
+                INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, created_at)
+                VALUES ($1, $2, $3, $4, $5)
+        `
+        now := time.Now()
+        _, err := exec.Exec(query, pr.PullRequestID, pr.PullRequestName, pr.AuthorID, pr.Status, now)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to create pull request: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// InsertReviewer assigns a reviewer to a pull request.
+func InsertReviewer(exec repository.DBTX, prID, userID string) error <span class="cov8" title="1">{
+        query := `INSERT INTO pr_reviewers (pull_request_id, user_id) VALUES ($1, $2)`
+        _, err := exec.Exec(query, prID, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to insert reviewer: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Get retrieves a pull request by ID with all assigned reviewers.
+func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) <span class="cov8" title="1">{
+        // Get PR details
+        query := `
+                SELECT pull_request_id, pull_request_name, author_id, status, created_at, merged_at
+                FROM pull_requests
+                WHERE pull_request_id = $1
+        `
+        var p domain.PullRequest
+        err := exec.QueryRow(query, prID).Scan(
+                &amp;p.PullRequestID,
+                &amp;p.PullRequestName,
+                &amp;p.AuthorID,
+                &amp;p.Status,
+                &amp;p.CreatedAt,
+                &amp;p.MergedAt,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get pull request: %w", err)</span>
+        }
+
+        // Get assigned reviewers
+        <span class="cov8" title="1">reviewersQuery := `
+                SELECT user_id
+                FROM pr_reviewers
+                WHERE pull_request_id = $1
+        `
+        rows, err := exec.Query(reviewersQuery, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get reviewers: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var reviewers []string
+        for rows.Next() </span><span class="cov8" title="1">{
+                var reviewerID string
+                if err := rows.Scan(&amp;reviewerID); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan reviewer: %w", err)
+                }</span>
+                <span class="cov8" title="1">reviewers = append(reviewers, reviewerID)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">p.AssignedReviewers = reviewers
+        return &amp;p, nil</span>
+}
+
+// GetByUser retrieves all pull requests assigned to a user for review.
+func GetByUser(exec repository.DBTX, userID string) ([]domain.PullRequestShort, error) <span class="cov8" title="1">{
+        query := `
+                SELECT pr.pull_request_id, pr.pull_request_name, pr.author_id, pr.status
+                FROM pull_requests pr
+                JOIN pr_reviewers rev ON pr.pull_request_id = rev.pull_request_id
+                WHERE rev.user_id = $1
+                ORDER BY pr.created_at DESC
+        `
+        rows, err := exec.Query(query, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get user pull requests: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var prs []domain.PullRequestShort
+        for rows.Next() </span><span class="cov8" title="1">{
+                var p domain.PullRequestShort
+                if err := rows.Scan(&amp;p.PullRequestID, &amp;p.PullRequestName, &amp;p.AuthorID, &amp;p.Status); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan pull request: %w", err)
+                }</span>
+                <span class="cov8" title="1">prs = append(prs, p)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return prs, nil</span>
+}
+
+// UpdateStatusToMerged updates the pull request status to MERGED.
+// Returns sql.ErrNoRows if PR doesn't exist or already merged.
+func UpdateStatusToMerged(exec repository.DBTX, prID string) error <span class="cov8" title="1">{
+        query := `
+                UPDATE pull_requests 
+                SET status = $1, merged_at = $2
+                WHERE pull_request_id = $3 AND status = $4
+        `
+        now := time.Now()
+        result, err := exec.Exec(query, domain.StatusMerged, now, prID, domain.StatusOpen)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to update PR status: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">rowsAffected, err := result.RowsAffected()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get rows affected: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return sql.ErrNoRows
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// DeleteReviewers removes all reviewers from a pull request.
+func DeleteReviewers(exec repository.DBTX, prID string) error <span class="cov0" title="0">{
+        query := `DELETE FROM pr_reviewers WHERE pull_request_id = $1`
+        _, err := exec.Exec(query, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete reviewers: %w", err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteReviewer removes a specific reviewer from a pull request.
+func DeleteReviewer(exec repository.DBTX, prID, userID string) error <span class="cov8" title="1">{
+        query := `DELETE FROM pr_reviewers WHERE pull_request_id = $1 AND user_id = $2`
+        _, err := exec.Exec(query, prID, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete reviewer: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Exists checks if a pull request exists.
+func Exists(exec repository.DBTX, prID string) (bool, error) <span class="cov0" title="0">{
+        var exists bool
+        query := `SELECT EXISTS(SELECT 1 FROM pull_requests WHERE pull_request_id = $1)`
+        err := exec.QueryRow(query, prID).Scan(&amp;exists)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, fmt.Errorf("failed to check pull request existence: %w", err)
+        }</span>
+        <span class="cov0" title="0">return exists, nil</span>
+}
+
+// GetStatus returns the status of a pull request.
+func GetStatus(exec repository.DBTX, prID string) (domain.PRStatus, error) <span class="cov8" title="1">{
+        var status domain.PRStatus
+        query := `SELECT status FROM pull_requests WHERE pull_request_id = $1`
+        err := exec.QueryRow(query, prID).Scan(&amp;status)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return "", err
+                }</span>
+                <span class="cov0" title="0">return "", fmt.Errorf("failed to get pull request status: %w", err)</span>
+        }
+        <span class="cov8" title="1">return status, nil</span>
+}
+
+// IsReviewerAssigned checks if a user is assigned as a reviewer for a PR.
+func IsReviewerAssigned(exec repository.DBTX, prID, userID string) (bool, error) <span class="cov8" title="1">{
+        var exists bool
+        query := `SELECT EXISTS(SELECT 1 FROM pr_reviewers WHERE pull_request_id = $1 AND user_id = $2)`
+        err := exec.QueryRow(query, prID, userID).Scan(&amp;exists)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, fmt.Errorf("failed to check reviewer assignment: %w", err)
+        }</span>
+        <span class="cov8" title="1">return exists, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package stats
+
+import (
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+)
+
+// ReviewerStat represents statistics for a reviewer.
+type ReviewerStat struct {
+        UserID   string
+        Username string
+        Count    int64
+}
+
+// AuthorStat represents statistics for an author.
+type AuthorStat struct {
+        UserID   string
+        Username string
+        Count    int64
+}
+
+// OverallStats represents overall statistics.
+type OverallStats struct {
+        TotalPRs         int64
+        TotalAssignments int64
+        TotalUsers       int64
+        TotalTeams       int64
+}
+
+// GetReviewerStats returns statistics about reviewer assignments per user.
+func GetReviewerStats(exec repository.DBTX) ([]ReviewerStat, error) <span class="cov8" title="1">{
+        query := `
+                SELECT u.user_id, u.username, COUNT(pr.user_id) as assignment_count
+                FROM users u
+                LEFT JOIN pr_reviewers pr ON u.user_id = pr.user_id
+                GROUP BY u.user_id, u.username
+                ORDER BY assignment_count DESC, u.user_id
+        `
+        rows, err := exec.Query(query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get reviewer stats: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var stats []ReviewerStat
+        for rows.Next() </span><span class="cov8" title="1">{
+                var stat ReviewerStat
+                if err := rows.Scan(&amp;stat.UserID, &amp;stat.Username, &amp;stat.Count); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan reviewer stat: %w", err)
+                }</span>
+                <span class="cov8" title="1">stats = append(stats, stat)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return stats, nil</span>
+}
+
+// GetAuthorStats returns statistics about PRs created per author.
+func GetAuthorStats(exec repository.DBTX) ([]AuthorStat, error) <span class="cov8" title="1">{
+        query := `
+                SELECT u.user_id, u.username, COUNT(pr.pull_request_id) as pr_count
+                FROM users u
+                LEFT JOIN pull_requests pr ON u.user_id = pr.author_id
+                GROUP BY u.user_id, u.username
+                ORDER BY pr_count DESC, u.user_id
+        `
+        rows, err := exec.Query(query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get author stats: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var stats []AuthorStat
+        for rows.Next() </span><span class="cov8" title="1">{
+                var stat AuthorStat
+                if err := rows.Scan(&amp;stat.UserID, &amp;stat.Username, &amp;stat.Count); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan author stat: %w", err)
+                }</span>
+                <span class="cov8" title="1">stats = append(stats, stat)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return stats, nil</span>
+}
+
+// GetOverallStats returns overall statistics.
+func GetOverallStats(exec repository.DBTX) (*OverallStats, error) <span class="cov8" title="1">{
+        query := `
+                SELECT 
+                        (SELECT COUNT(*) FROM pull_requests) as total_prs,
+                        (SELECT COUNT(*) FROM pr_reviewers) as total_assignments,
+                        (SELECT COUNT(*) FROM users) as total_users,
+                        (SELECT COUNT(*) FROM teams) as total_teams
+        `
+        var stats OverallStats
+        err := exec.QueryRow(query).Scan(
+                &amp;stats.TotalPRs,
+                &amp;stats.TotalAssignments,
+                &amp;stats.TotalUsers,
+                &amp;stats.TotalTeams,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get overall stats: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;stats, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package team
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+)
+
+// Create inserts a new team.
+func Create(exec repository.DBTX, teamName string) error <span class="cov8" title="1">{
+        query := `INSERT INTO teams (team_name) VALUES ($1)`
+        _, err := exec.Exec(query, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create team: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Get retrieves a team with all its members.
+func Get(exec repository.DBTX, teamName string) (*domain.Team, error) <span class="cov8" title="1">{
+        query := `
+                SELECT user_id, username, is_active
+                FROM users
+                WHERE team_name = $1
+        `
+        rows, err := exec.Query(query, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get team members: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        members := make([]domain.TeamMember, 0)
+        for rows.Next() </span><span class="cov8" title="1">{
+                var member domain.TeamMember
+                if err := rows.Scan(&amp;member.UserID, &amp;member.Username, &amp;member.IsActive); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan team member: %w", err)
+                }</span>
+                <span class="cov8" title="1">members = append(members, member)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        // If no members, check if team exists
+        <span class="cov8" title="1">if len(members) == 0 </span><span class="cov8" title="1">{
+                exists, err := Exists(exec, teamName)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">if !exists </span><span class="cov8" title="1">{
+                        return nil, sql.ErrNoRows
+                }</span>
+        }
+
+        <span class="cov8" title="1">return &amp;domain.Team{
+                TeamName: teamName,
+                Members:  members,
+        }, nil</span>
+}
+
+// Exists checks if a team exists.
+func Exists(exec repository.DBTX, teamName string) (bool, error) <span class="cov8" title="1">{
+        var exists bool
+        query := `SELECT EXISTS(SELECT 1 FROM teams WHERE team_name = $1)`
+        err := exec.QueryRow(query, teamName).Scan(&amp;exists)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, fmt.Errorf("failed to check team existence: %w", err)
+        }</span>
+        <span class="cov8" title="1">return exists, nil</span>
+}
+
+// DeactivateAll deactivates all users in the team.
+func DeactivateAll(exec repository.DBTX, teamName string) error <span class="cov8" title="1">{
+        query := `UPDATE users SET is_active = false WHERE team_name = $1`
+        _, err := exec.Exec(query, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to deactivate team: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package user
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+)
+
+// Create inserts a new user.
+func Create(exec repository.DBTX, user *domain.User) error <span class="cov8" title="1">{
+        query := `
+                INSERT INTO users (user_id, username, team_name, is_active)
+                VALUES ($1, $2, $3, $4)
+        `
+        _, err := exec.Exec(query, user.UserID, user.Username, user.TeamName, user.IsActive)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create user: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Get retrieves a user by ID.
+func Get(exec repository.DBTX, userID string) (*domain.User, error) <span class="cov8" title="1">{
+        query := `
+                SELECT user_id, username, team_name, is_active
+                FROM users
+                WHERE user_id = $1
+        `
+        var u domain.User
+        err := exec.QueryRow(query, userID).Scan(
+                &amp;u.UserID,
+                &amp;u.Username,
+                &amp;u.TeamName,
+                &amp;u.IsActive,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get user: %w", err)</span>
+        }
+        <span class="cov8" title="1">return &amp;u, nil</span>
+}
+
+// Update updates user's team_name, username, and is_active.
+func Update(exec repository.DBTX, user *domain.User) error <span class="cov8" title="1">{
+        query := `
+                UPDATE users 
+                SET username = $1, team_name = $2, is_active = $3
+                WHERE user_id = $4
+        `
+        result, err := exec.Exec(query, user.Username, user.TeamName, user.IsActive, user.UserID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to update user: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">rowsAffected, err := result.RowsAffected()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get rows affected: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return sql.ErrNoRows
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// SetIsActive updates the is_active status and returns the updated user.
+func SetIsActive(exec repository.DBTX, userID string, isActive bool) (*domain.User, error) <span class="cov8" title="1">{
+        query := `
+                UPDATE users 
+                SET is_active = $1 
+                WHERE user_id = $2 
+                RETURNING user_id, username, team_name, is_active
+        `
+        var u domain.User
+        err := exec.QueryRow(query, isActive, userID).Scan(
+                &amp;u.UserID,
+                &amp;u.Username,
+                &amp;u.TeamName,
+                &amp;u.IsActive,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to update user status: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">return &amp;u, nil</span>
+}
+
+// Exists checks if a user exists.
+func Exists(exec repository.DBTX, userID string) (bool, error) <span class="cov0" title="0">{
+        var exists bool
+        query := `SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)`
+        err := exec.QueryRow(query, userID).Scan(&amp;exists)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, fmt.Errorf("failed to check user existence: %w", err)
+        }</span>
+        <span class="cov0" title="0">return exists, nil</span>
+}
+
+// GetActiveTeammates returns all active users from the same team, excluding the given user.
+func GetActiveTeammates(exec repository.DBTX, userID string) ([]domain.User, error) <span class="cov8" title="1">{
+        query := `
+                SELECT u2.user_id, u2.username, u2.team_name, u2.is_active
+                FROM users u1
+                JOIN users u2 ON u1.team_name = u2.team_name
+                WHERE u1.user_id = $1 
+                  AND u2.user_id != $1
+                  AND u2.is_active = true
+        `
+        rows, err := exec.Query(query, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get active teammates: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        var teammates []domain.User
+        for rows.Next() </span><span class="cov8" title="1">{
+                var u domain.User
+                if err := rows.Scan(&amp;u.UserID, &amp;u.Username, &amp;u.TeamName, &amp;u.IsActive); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan teammate: %w", err)
+                }</span>
+                <span class="cov8" title="1">teammates = append(teammates, u)</span>
+        }
+
+        <span class="cov8" title="1">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("rows iteration error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return teammates, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package service
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/pr"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/user"
+)
+
+// PRService handles pull request business logic.
+type PRService struct {
+        db       *sql.DB
+        assigner *ReviewerAssigner
+}
+
+// NewPRService creates a new pull request service.
+func NewPRService(db *sql.DB, assigner *ReviewerAssigner) *PRService <span class="cov8" title="1">{
+        return &amp;PRService{
+                db:       db,
+                assigner: assigner,
+        }
+}</span>
+
+// CreatePR creates a new pull request and assigns up to 2 reviewers.
+func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest, error) <span class="cov8" title="1">{
+        _, err := user.Get(s.db, authorID)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, ErrPRAuthorNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get author: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">teammates, err := user.GetActiveTeammates(s.db, authorID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get teammates: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">reviewers, err := s.assigner.SelectReviewers(teammates)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to select reviewers: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">tx, err := s.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to begin transaction: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback()
+
+        pullRequest := &amp;domain.PullRequest{
+                PullRequestID:     prID,
+                PullRequestName:   prName,
+                AuthorID:          authorID,
+                Status:            domain.StatusOpen,
+                AssignedReviewers: reviewers,
+        }
+
+        if err := pr.Create(tx, pullRequest); err != nil </span><span class="cov8" title="1">{
+                if repository.IsUniqueViolation(err) </span><span class="cov8" title="1">{
+                        return nil, ErrPRExists
+                }</span>
+                <span class="cov0" title="0">if repository.IsForeignKeyViolation(err) </span><span class="cov0" title="0">{
+                        return nil, ErrPRAuthorNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to create pull request: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">for _, reviewerID := range reviewers </span><span class="cov8" title="1">{
+                if err := pr.InsertReviewer(tx, prID, reviewerID); err != nil </span><span class="cov0" title="0">{
+                        if repository.IsForeignKeyViolation(err) </span><span class="cov0" title="0">{
+                                return nil, ErrPRAuthorNotFound
+                        }</span>
+                        <span class="cov0" title="0">return nil, fmt.Errorf("failed to assign reviewer: %w", err)</span>
+                }
+        }
+
+        // Verify all assigned reviewers are still active
+        <span class="cov8" title="1">for _, reviewerID := range reviewers </span><span class="cov8" title="1">{
+                u, err := user.Get(tx, reviewerID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to verify reviewer %s: %w", reviewerID, err)
+                }</span>
+                <span class="cov8" title="1">if !u.IsActive </span><span class="cov0" title="0">{
+                        return nil, ErrInactiveReviewer
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to commit transaction: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">fullPR, err := pr.Get(s.db, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get created pull request: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return fullPR, nil</span>
+}
+
+// MergePR merges a pull request.
+// Idempotent: if already merged, returns current state without error.
+func (s *PRService) MergePR(prID string) (*domain.PullRequest, error) <span class="cov8" title="1">{
+        pullRequest, err := pr.Get(s.db, prID)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, ErrPRNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get pull request: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">if pullRequest.Status == domain.StatusMerged </span><span class="cov8" title="1">{
+                return pullRequest, nil
+        }</span>
+
+        <span class="cov8" title="1">if err := pr.UpdateStatusToMerged(s.db, prID); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to merge pull request: %w", err)
+        }</span>
+
+        // Get updated PR data
+        <span class="cov8" title="1">mergedPR, err := pr.Get(s.db, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get merged pull request: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return mergedPR, nil</span>
+}
+
+// ReassignPR replaces one specific reviewer with a new one.
+// Returns the updated PR and the new reviewer's ID.
+func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest, string, error) <span class="cov8" title="1">{
+        pullRequest, err := pr.Get(s.db, prID)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, "", ErrPRNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, "", fmt.Errorf("failed to get pull request: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">teammates, err := user.GetActiveTeammates(s.db, oldReviewerID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to get teammates: %w", err)
+        }</span>
+
+        // Exclude all current reviewers AND author
+        <span class="cov8" title="1">excludeIDs := make([]string, 0, len(pullRequest.AssignedReviewers)+1)
+        excludeIDs = append(excludeIDs, pullRequest.AssignedReviewers...)
+        excludeIDs = append(excludeIDs, pullRequest.AuthorID)
+
+        newReviewers, err := s.assigner.SelectReassignReviewers(teammates, excludeIDs)
+        if err != nil || len(newReviewers) == 0 </span><span class="cov0" title="0">{
+                return nil, "", ErrNoCandidate
+        }</span>
+        <span class="cov8" title="1">newReviewerID := newReviewers[0]
+
+        tx, err := s.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to begin transaction: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback()
+
+        status, err := pr.GetStatus(tx, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, "", ErrPRNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, "", fmt.Errorf("failed to check PR status: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">if status != domain.StatusOpen </span><span class="cov8" title="1">{
+                return nil, "", ErrPRMerged
+        }</span>
+
+        <span class="cov8" title="1">isAssigned, err := pr.IsReviewerAssigned(tx, prID, oldReviewerID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to check reviewer assignment: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if !isAssigned </span><span class="cov8" title="1">{
+                return nil, "", ErrReviewerNotAssigned
+        }</span>
+
+        <span class="cov8" title="1">if err := pr.DeleteReviewer(tx, prID, oldReviewerID); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to delete old reviewer: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if err := pr.InsertReviewer(tx, prID, newReviewerID); err != nil </span><span class="cov0" title="0">{
+                if repository.IsForeignKeyViolation(err) </span><span class="cov0" title="0">{
+                        return nil, "", ErrPRAuthorNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, "", fmt.Errorf("failed to assign reviewer: %w", err)</span>
+        }
+
+        // Verify new reviewer is active
+        <span class="cov8" title="1">u, err := user.Get(tx, newReviewerID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to verify reviewer %s: %w", newReviewerID, err)
+        }</span>
+        <span class="cov8" title="1">if !u.IsActive </span><span class="cov0" title="0">{
+                return nil, "", ErrInactiveReviewer
+        }</span>
+
+        <span class="cov8" title="1">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to commit transaction: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">updatedPR, err := pr.Get(s.db, prID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("failed to get updated pull request: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return updatedPR, newReviewerID, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package service
+
+import (
+        "crypto/rand"
+        "fmt"
+        "math/big"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+)
+
+// ReviewerAssigner handles reviewer selection logic.
+type ReviewerAssigner struct{}
+
+// NewReviewerAssigner creates a new reviewer assigner.
+func NewReviewerAssigner() *ReviewerAssigner <span class="cov8" title="1">{
+        return &amp;ReviewerAssigner{}
+}</span>
+
+// SelectReviewers selects up to 2 reviewers from active teammates.
+// Uses cryptographically secure random selection.
+func (a *ReviewerAssigner) SelectReviewers(teammates []domain.User) ([]string, error) <span class="cov8" title="1">{
+        if len(teammates) == 0 </span><span class="cov0" title="0">{
+                return []string{}, nil
+        }</span>
+
+        <span class="cov8" title="1">if len(teammates) &lt;= 2 </span><span class="cov8" title="1">{
+                reviewers := make([]string, len(teammates))
+                for i, user := range teammates </span><span class="cov8" title="1">{
+                        reviewers[i] = user.UserID
+                }</span>
+                <span class="cov8" title="1">return reviewers, nil</span>
+        }
+
+        <span class="cov8" title="1">selected := make(map[int]bool)
+        reviewers := make([]string, 0, 2)
+
+        for len(reviewers) &lt; 2 </span><span class="cov8" title="1">{
+                idx, err := secureRandInt(len(teammates))
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to generate random index: %w", err)
+                }</span>
+
+                <span class="cov8" title="1">if !selected[idx] </span><span class="cov8" title="1">{
+                        selected[idx] = true
+                        reviewers = append(reviewers, teammates[idx].UserID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return reviewers, nil</span>
+}
+
+// SelectReassignReviewers selects up to 2 new reviewers, excluding current ones.
+func (a *ReviewerAssigner) SelectReassignReviewers(teammates []domain.User, excludeIDs []string) ([]string, error) <span class="cov8" title="1">{
+        excludeMap := make(map[string]struct{})
+        for _, id := range excludeIDs </span><span class="cov8" title="1">{
+                excludeMap[id] = struct{}{}
+        }</span>
+
+        <span class="cov8" title="1">candidates := make([]domain.User, 0)
+        for _, user := range teammates </span><span class="cov8" title="1">{
+                if _, excluded := excludeMap[user.UserID]; !excluded </span><span class="cov8" title="1">{
+                        candidates = append(candidates, user)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if len(candidates) == 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("no candidates available for reassignment")
+        }</span>
+
+        <span class="cov8" title="1">return a.SelectReviewers(candidates)</span>
+}
+
+// secureRandInt returns a cryptographically secure random integer in [0, max).
+func secureRandInt(max int) (int, error) <span class="cov8" title="1">{
+        nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return int(nBig.Int64()), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package service
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/stats"
+)
+
+// StatsService handles statistics business logic.
+type StatsService struct {
+        db *sql.DB
+}
+
+// NewStatsService creates a new stats service.
+func NewStatsService(db *sql.DB) *StatsService <span class="cov8" title="1">{
+        return &amp;StatsService{db: db}
+}</span>
+
+// Statistics represents all statistics.
+type Statistics struct {
+        Overall       *stats.OverallStats
+        ReviewerStats []stats.ReviewerStat
+        AuthorStats   []stats.AuthorStat
+}
+
+// GetStatistics returns all statistics.
+func (s *StatsService) GetStatistics() (*Statistics, error) <span class="cov8" title="1">{
+        overall, err := stats.GetOverallStats(s.db)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get overall stats: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">reviewerStats, err := stats.GetReviewerStats(s.db)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get reviewer stats: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">authorStats, err := stats.GetAuthorStats(s.db)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get author stats: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;Statistics{
+                Overall:       overall,
+                ReviewerStats: reviewerStats,
+                AuthorStats:   authorStats,
+        }, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package service
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/pr"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/team"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/user"
+)
+
+// TeamService handles team business logic.
+type TeamService struct {
+        db *sql.DB
+}
+
+// NewTeamService creates a new team service.
+func NewTeamService(db *sql.DB) *TeamService <span class="cov8" title="1">{
+        return &amp;TeamService{db: db}
+}</span>
+
+// CreateTeam creates a new team with members in a single transaction.
+func (s *TeamService) CreateTeam(teamName string, members []domain.TeamMember) error <span class="cov8" title="1">{
+        tx, err := s.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to begin transaction: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback()
+
+        // Check if team already exists
+        exists, err := team.Exists(tx, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to check team existence: %w", err)
+        }</span>
+        <span class="cov8" title="1">if exists </span><span class="cov8" title="1">{
+                return ErrTeamExists
+        }</span>
+
+        // Create team
+        <span class="cov8" title="1">if err := team.Create(tx, teamName); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create team: %w", err)
+        }</span>
+
+        // Process each user: create if not exists, update if exists
+        <span class="cov8" title="1">for _, member := range members </span><span class="cov8" title="1">{
+                u := domain.User{
+                        UserID:   member.UserID,
+                        Username: member.Username,
+                        TeamName: teamName,
+                        IsActive: member.IsActive,
+                }
+
+                // Check if user exists
+                existingUser, err := user.Get(tx, member.UserID)
+                if err != nil &amp;&amp; err != sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to check user existence: %w", err)
+                }</span>
+
+                <span class="cov8" title="1">if existingUser == nil </span><span class="cov8" title="1">{
+                        if err := user.Create(tx, &amp;u); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to create user: %w", err)
+                        }</span>
+                } else<span class="cov8" title="1"> {
+                        if err := user.Update(tx, &amp;u); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to update user: %w", err)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to commit transaction: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// GetTeam retrieves a team with all its members.
+func (s *TeamService) GetTeam(teamName string) (*domain.Team, error) <span class="cov8" title="1">{
+        t, err := team.Get(s.db, teamName)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, ErrTeamNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get team: %w", err)</span>
+        }
+        <span class="cov8" title="1">return t, nil</span>
+}
+
+// DeactivateTeam deactivates all users in a team and reassigns open PRs.
+func (s *TeamService) DeactivateTeam(teamName string) error <span class="cov8" title="1">{
+        // Check if team exists
+        _, err := team.Get(s.db, teamName)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return ErrTeamNotFound
+                }</span>
+                <span class="cov0" title="0">return fmt.Errorf("failed to check team: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">tx, err := s.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to begin transaction: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback()
+
+        // 1. Deactivate all team users
+        if err := team.DeactivateAll(tx, teamName); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to deactivate team: %w", err)
+        }</span>
+
+        // 2. Find all open PRs with reviewers from this team
+        <span class="cov8" title="1">prsWithReviewers, err := pr.GetOpenPRsWithReviewersFromTeam(tx, teamName)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get open PRs: %w", err)
+        }</span>
+
+        // 3. Reassign reviewer for each PR
+        <span class="cov8" title="1">for _, prWithRev := range prsWithReviewers </span><span class="cov8" title="1">{
+                // Remove old reviewer
+                if err := pr.DeleteReviewer(tx, prWithRev.PullRequestID, prWithRev.ReviewerID); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to delete reviewer: %w", err)
+                }</span>
+
+                // Get PR details
+                <span class="cov8" title="1">pullRequest, err := pr.Get(tx, prWithRev.PullRequestID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to get PR: %w", err)
+                }</span>
+
+                // Get active teammates of author (already excludes author)
+                <span class="cov8" title="1">teammates, err := user.GetActiveTeammates(tx, prWithRev.AuthorID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to get teammates: %w", err)
+                }</span>
+
+                // Filter out already assigned reviewers
+                <span class="cov8" title="1">var candidates []string
+                for _, teammate := range teammates </span><span class="cov8" title="1">{
+                        isAssigned := false
+                        for _, assignedID := range pullRequest.AssignedReviewers </span><span class="cov0" title="0">{
+                                if teammate.UserID == assignedID </span><span class="cov0" title="0">{
+                                        isAssigned = true
+                                        break</span>
+                                }
+                        }
+                        <span class="cov8" title="1">if !isAssigned </span><span class="cov8" title="1">{
+                                candidates = append(candidates, teammate.UserID)
+                        }</span>
+                }
+
+                // If there are candidates - assign the first one
+                <span class="cov8" title="1">if len(candidates) &gt; 0 </span><span class="cov8" title="1">{
+                        if err := pr.InsertReviewer(tx, prWithRev.PullRequestID, candidates[0]); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to insert new reviewer: %w", err)
+                        }</span>
+                }
+                // If no candidates - PR remains with fewer reviewers
+        }
+
+        <span class="cov8" title="1">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to commit transaction: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package service
+
+import (
+        "database/sql"
+        "fmt"
+
+        "github.com/mishasvintus/avito_backend_internship/internal/domain"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/pr"
+        "github.com/mishasvintus/avito_backend_internship/internal/repository/user"
+)
+
+// UserService handles user business logic.
+type UserService struct {
+        db *sql.DB
+}
+
+// NewUserService creates a new user service.
+func NewUserService(db *sql.DB) *UserService <span class="cov8" title="1">{
+        return &amp;UserService{db: db}
+}</span>
+
+// SetIsActive updates the is_active status of a user.
+func (s *UserService) SetIsActive(userID string, isActive bool) (*domain.User, error) <span class="cov8" title="1">{
+        u, err := user.SetIsActive(s.db, userID, isActive)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                        return nil, ErrUserNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to update user status: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">return u, nil</span>
+}
+
+// GetUserReviews returns all pull requests where the user is assigned as a reviewer.
+func (s *UserService) GetUserReviews(userID string) ([]domain.PullRequestShort, error) <span class="cov8" title="1">{
+        prs, err := pr.GetByUser(s.db, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get user reviews: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return prs, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -71,3 +71,13 @@ func Exists(exec repository.DBTX, teamName string) (bool, error) {
 	}
 	return exists, nil
 }
+
+// DeactivateAll deactivates all users in the team.
+func DeactivateAll(exec repository.DBTX, teamName string) error {
+	query := `UPDATE users SET is_active = false WHERE team_name = $1`
+	_, err := exec.Exec(query, teamName)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate team: %w", err)
+	}
+	return nil
+}

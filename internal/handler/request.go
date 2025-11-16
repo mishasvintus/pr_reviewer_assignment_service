@@ -26,6 +26,11 @@ type AddTeamRequest struct {
 	Members  []domain.TeamMember `json:"members" binding:"required"`
 }
 
+// DeactivateTeamRequest represents request body for POST /team/deactivate.
+type DeactivateTeamRequest struct {
+	TeamName string `json:"team_name" binding:"required"`
+}
+
 // SetIsActiveRequest represents request body for POST /users/setIsActive.
 type SetIsActiveRequest struct {
 	UserID   string `json:"user_id" binding:"required"`

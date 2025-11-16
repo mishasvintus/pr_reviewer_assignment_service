@@ -18,6 +18,7 @@ func SetupRoutes(
 	// Team endpoints
 	r.POST("/team/add", teamHandler.AddTeam)
 	r.GET("/team/get", teamHandler.GetTeam)
+	r.POST("/team/deactivate", teamHandler.DeactivateTeam)
 
 	// User endpoints
 	r.POST("/users/setIsActive", userHandler.SetIsActive)

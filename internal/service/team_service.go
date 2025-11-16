@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mishasvintus/avito_backend_internship/internal/domain"
+	"github.com/mishasvintus/avito_backend_internship/internal/repository/pr"
 	"github.com/mishasvintus/avito_backend_internship/internal/repository/team"
 	"github.com/mishasvintus/avito_backend_internship/internal/repository/user"
 )
@@ -84,4 +85,82 @@ func (s *TeamService) GetTeam(teamName string) (*domain.Team, error) {
 		return nil, fmt.Errorf("failed to get team: %w", err)
 	}
 	return t, nil
+}
+
+// DeactivateTeam deactivates all users in a team and reassigns open PRs.
+func (s *TeamService) DeactivateTeam(teamName string) error {
+	// Check if team exists
+	_, err := team.Get(s.db, teamName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrTeamNotFound
+		}
+		return fmt.Errorf("failed to check team: %w", err)
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Deactivate all team users
+	if err := team.DeactivateAll(tx, teamName); err != nil {
+		return fmt.Errorf("failed to deactivate team: %w", err)
+	}
+
+	// 2. Find all open PRs with reviewers from this team
+	prsWithReviewers, err := pr.GetOpenPRsWithReviewersFromTeam(tx, teamName)
+	if err != nil {
+		return fmt.Errorf("failed to get open PRs: %w", err)
+	}
+
+	// 3. Reassign reviewer for each PR
+	for _, prWithRev := range prsWithReviewers {
+		// Remove old reviewer
+		if err := pr.DeleteReviewer(tx, prWithRev.PullRequestID, prWithRev.ReviewerID); err != nil {
+			return fmt.Errorf("failed to delete reviewer: %w", err)
+		}
+
+		// Get PR details
+		pullRequest, err := pr.Get(tx, prWithRev.PullRequestID)
+		if err != nil {
+			return fmt.Errorf("failed to get PR: %w", err)
+		}
+
+		// Get active teammates of author (already excludes author)
+		teammates, err := user.GetActiveTeammates(tx, prWithRev.AuthorID)
+		if err != nil {
+			return fmt.Errorf("failed to get teammates: %w", err)
+		}
+
+		// Filter out already assigned reviewers
+		var candidates []string
+		for _, teammate := range teammates {
+			isAssigned := false
+			for _, assignedID := range pullRequest.AssignedReviewers {
+				if teammate.UserID == assignedID {
+					isAssigned = true
+					break
+				}
+			}
+			if !isAssigned {
+				candidates = append(candidates, teammate.UserID)
+			}
+		}
+
+		// If there are candidates - assign the first one
+		if len(candidates) > 0 {
+			if err := pr.InsertReviewer(tx, prWithRev.PullRequestID, candidates[0]); err != nil {
+				return fmt.Errorf("failed to insert new reviewer: %w", err)
+			}
+		}
+		// If no candidates - PR remains with fewer reviewers
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

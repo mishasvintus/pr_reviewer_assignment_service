@@ -8,6 +8,7 @@ import (
 type TeamServiceInterface interface {
 	CreateTeam(teamName string, members []domain.TeamMember) error
 	GetTeam(teamName string) (*domain.Team, error)
+	DeactivateTeam(teamName string) error
 }
 
 // UserServiceInterface defines the interface for user operations.

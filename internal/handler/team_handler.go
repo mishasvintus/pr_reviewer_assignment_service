@@ -93,3 +93,25 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 		Members:  members,
 	})
 }
+
+// DeactivateTeam handles POST /team/deactivate.
+func (h *TeamHandler) DeactivateTeam(c *gin.Context) {
+	var req DeactivateTeamRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		BadRequest(c, "invalid request body")
+		return
+	}
+
+	err := h.teamService.DeactivateTeam(req.TeamName)
+	if err != nil {
+		if errors.Is(err, service.ErrTeamNotFound) {
+			NotFound(c, "team not found")
+			return
+		}
+		InternalError(c, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "team deactivated successfully"})
+}
