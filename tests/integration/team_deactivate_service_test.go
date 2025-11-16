@@ -17,8 +17,8 @@ import (
 func TestTeamService_DeactivateTeam(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	teamService := service.NewTeamService(db)
 

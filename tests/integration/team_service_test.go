@@ -16,8 +16,8 @@ import (
 func TestTeamService_CreateTeam(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	teamService := service.NewTeamService(db)
 
@@ -95,8 +95,8 @@ func TestTeamService_CreateTeam(t *testing.T) {
 func TestTeamService_GetTeam(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// Setup: create team with members
 	teamName := "test_team"

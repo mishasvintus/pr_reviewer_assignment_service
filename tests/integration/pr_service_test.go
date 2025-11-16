@@ -17,8 +17,8 @@ import (
 func TestPRService_CreatePR(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// create team and author
 	teamName := "team1"
@@ -97,8 +97,8 @@ func TestPRService_CreatePR(t *testing.T) {
 func TestPRService_MergePR(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// Setup: create team, author, and PR
 	teamName := "team1"
@@ -149,8 +149,8 @@ func TestPRService_MergePR(t *testing.T) {
 func TestPRService_ReassignPR(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// Setup: create team, users
 	teamName := "team1"

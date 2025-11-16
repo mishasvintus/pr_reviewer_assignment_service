@@ -18,8 +18,8 @@ import (
 func TestStatsService_GetStatistics(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	statsService := service.NewStatsService(db)
 

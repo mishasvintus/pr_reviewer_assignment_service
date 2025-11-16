@@ -49,7 +49,7 @@ func SetupTestDB() (*sql.DB, error) {
 
 	// Clean up
 	if err := CleanupTestDB(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to cleanup database: %w", err)
 	}
 

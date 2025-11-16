@@ -67,7 +67,7 @@ func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reviewers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var reviewers []string
 	for rows.Next() {
@@ -99,7 +99,7 @@ func GetByUser(exec repository.DBTX, userID string) ([]domain.PullRequestShort, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user pull requests: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var prs []domain.PullRequestShort
 	for rows.Next() {

@@ -48,7 +48,7 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	pullRequest := &domain.PullRequest{
 		PullRequestID:     prID,
@@ -159,7 +159,7 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	status, err := pr.GetStatus(tx, prID)
 	if err != nil {

@@ -18,8 +18,8 @@ import (
 func TestUserService_SetIsActive(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// Setup: create team and user
 	teamName := "test_team"
@@ -86,8 +86,8 @@ func TestUserService_SetIsActive(t *testing.T) {
 func TestUserService_GetUserReviews(t *testing.T) {
 	db, err := tests.SetupTestDB()
 	require.NoError(t, err)
-	defer db.Close()
-	defer tests.CleanupTestDB(db)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = tests.CleanupTestDB(db) }()
 
 	// Setup: create team, users, and PR
 	teamName := "test_team"

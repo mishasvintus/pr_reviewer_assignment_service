@@ -41,7 +41,7 @@ func GetReviewerStats(exec repository.DBTX) ([]ReviewerStat, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reviewer stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var stats []ReviewerStat
 	for rows.Next() {
@@ -72,7 +72,7 @@ func GetAuthorStats(exec repository.DBTX) ([]AuthorStat, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get author stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var stats []AuthorStat
 	for rows.Next() {

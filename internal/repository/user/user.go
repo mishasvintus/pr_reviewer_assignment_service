@@ -118,7 +118,7 @@ func GetActiveTeammates(exec repository.DBTX, userID string) ([]domain.User, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active teammates: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var teammates []domain.User
 	for rows.Next() {

@@ -29,7 +29,7 @@ func Get(exec repository.DBTX, teamName string) (*domain.Team, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	members := make([]domain.TeamMember, 0)
 	for rows.Next() {

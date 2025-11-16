@@ -26,7 +26,7 @@ func (s *TeamService) CreateTeam(teamName string, members []domain.TeamMember) e
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Check if team already exists
 	exists, err := team.Exists(tx, teamName)
@@ -102,7 +102,7 @@ func (s *TeamService) DeactivateTeam(teamName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// 1. Deactivate all team users
 	if err := team.DeactivateAll(tx, teamName); err != nil {

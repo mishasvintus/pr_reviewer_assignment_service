@@ -26,7 +26,7 @@ func GetOpenPRsWithReviewersFromTeam(exec repository.DBTX, teamName string) ([]P
 	if err != nil {
 		return nil, fmt.Errorf("failed to get open PRs with reviewers from team: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var result []PRWithReviewer
 	for rows.Next() {

@@ -22,7 +22,7 @@ func setupTestData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to setup test database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create team
 	teamData := map[string]interface{}{
@@ -38,7 +38,7 @@ func setupTestData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to setup team: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Create some PRs for testing
 	for i := 0; i < 5; i++ {
@@ -53,7 +53,7 @@ func setupTestData(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create PR %s: %v", prID, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		time.Sleep(100 * time.Millisecond)
 	}
 	time.Sleep(500 * time.Millisecond)
@@ -66,7 +66,7 @@ func setupReassignTestData(t *testing.T) ([]string, []string) {
 	if err != nil {
 		t.Fatalf("Failed to setup test database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create team with 10 members
 	members := make([]map[string]interface{}, 10)
@@ -90,7 +90,7 @@ func setupReassignTestData(t *testing.T) ([]string, []string) {
 	if err != nil {
 		t.Fatalf("Failed to setup team: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Create 10 PRs with different authors
 	prIDs := make([]string, 10)
@@ -114,7 +114,7 @@ func setupReassignTestData(t *testing.T) ([]string, []string) {
 
 		// Parse response to get initial reviewers
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		var createResp struct {
 			PR struct {
@@ -142,8 +142,7 @@ func setupReassignTestData(t *testing.T) ([]string, []string) {
 // testGetTeam performs a GET /team/get request.
 func testGetTeam(results chan<- Result) {
 	defer func() {
-		if r := recover(); r != nil {
-		}
+		_ = recover()
 	}()
 
 	start := time.Now()
@@ -154,8 +153,8 @@ func testGetTeam(results chan<- Result) {
 	if err != nil {
 		result.Error = err
 	} else {
-		defer resp.Body.Close()
-		io.Copy(io.Discard, resp.Body)
+		defer func() { _ = resp.Body.Close() }()
+		_, _ = io.Copy(io.Discard, resp.Body)
 		result.StatusCode = resp.StatusCode
 	}
 
@@ -168,8 +167,7 @@ func testGetTeam(results chan<- Result) {
 // testGetUserReviews performs a GET /users/getReview request.
 func testGetUserReviews(results chan<- Result) {
 	defer func() {
-		if r := recover(); r != nil {
-		}
+		_ = recover()
 	}()
 
 	start := time.Now()
@@ -180,8 +178,8 @@ func testGetUserReviews(results chan<- Result) {
 	if err != nil {
 		result.Error = err
 	} else {
-		defer resp.Body.Close()
-		io.Copy(io.Discard, resp.Body)
+		defer func() { _ = resp.Body.Close() }()
+		_, _ = io.Copy(io.Discard, resp.Body)
 		result.StatusCode = resp.StatusCode
 	}
 
@@ -194,8 +192,7 @@ func testGetUserReviews(results chan<- Result) {
 // testSetIsActive performs a POST /users/setIsActive request.
 func testSetIsActive(results chan<- Result) {
 	defer func() {
-		if r := recover(); r != nil {
-		}
+		_ = recover()
 	}()
 
 	data := map[string]interface{}{
@@ -212,8 +209,8 @@ func testSetIsActive(results chan<- Result) {
 	if err != nil {
 		result.Error = err
 	} else {
-		defer resp.Body.Close()
-		io.Copy(io.Discard, resp.Body)
+		defer func() { _ = resp.Body.Close() }()
+		_, _ = io.Copy(io.Discard, resp.Body)
 		result.StatusCode = resp.StatusCode
 	}
 
@@ -226,8 +223,7 @@ func testSetIsActive(results chan<- Result) {
 // testReassignPR performs a POST /pullRequest/reassign request.
 func testReassignPR(results chan<- Result, prIDs []string, reviewerIDs []string) {
 	defer func() {
-		if r := recover(); r != nil {
-		}
+		_ = recover()
 	}()
 
 	// Use round-robin to cycle through PRs
@@ -268,7 +264,7 @@ func testReassignPR(results chan<- Result, prIDs []string, reviewerIDs []string)
 	if err != nil {
 		result.Error = err
 	} else {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == 200 {
 			body, _ := io.ReadAll(resp.Body)
@@ -280,7 +276,7 @@ func testReassignPR(results chan<- Result, prIDs []string, reviewerIDs []string)
 				reviewerMutex.Unlock()
 			}
 		} else {
-			io.Copy(io.Discard, resp.Body)
+			_, _ = io.Copy(io.Discard, resp.Body)
 		}
 		result.StatusCode = resp.StatusCode
 	}
