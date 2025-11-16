@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/mishasvintus/avito_backend_internship/internal/domain"
 	"github.com/mishasvintus/avito_backend_internship/internal/service"
 )
 
@@ -22,10 +21,7 @@ func NewTeamHandler(teamService *service.TeamService) *TeamHandler {
 
 // AddTeam handles POST /team/add.
 func (h *TeamHandler) AddTeam(c *gin.Context) {
-	var req struct {
-		TeamName string              `json:"team_name" binding:"required"`
-		Members  []domain.TeamMember `json:"members" binding:"required"`
-	}
+	var req AddTeamRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		BadRequest(c, "invalid request body")

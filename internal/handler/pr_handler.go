@@ -23,11 +23,7 @@ func NewPRHandler(prService *service.PRService) *PRHandler {
 
 // CreatePR handles POST /pullRequest/create.
 func (h *PRHandler) CreatePR(c *gin.Context) {
-	var req struct {
-		PullRequestID   string `json:"pull_request_id" binding:"required"`
-		PullRequestName string `json:"pull_request_name" binding:"required"`
-		AuthorID        string `json:"author_id" binding:"required"`
-	}
+	var req CreatePRRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		BadRequest(c, "invalid request body")
@@ -59,9 +55,7 @@ func (h *PRHandler) CreatePR(c *gin.Context) {
 
 // MergePR handles POST /pullRequest/merge.
 func (h *PRHandler) MergePR(c *gin.Context) {
-	var req struct {
-		PullRequestID string `json:"pull_request_id" binding:"required"`
-	}
+	var req MergePRRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		BadRequest(c, "invalid request body")
@@ -85,10 +79,7 @@ func (h *PRHandler) MergePR(c *gin.Context) {
 
 // ReassignPR handles POST /pullRequest/reassign.
 func (h *PRHandler) ReassignPR(c *gin.Context) {
-	var req struct {
-		PullRequestID string `json:"pull_request_id" binding:"required"`
-		OldUserID     string `json:"old_user_id" binding:"required"`
-	}
+	var req ReassignPRRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		BadRequest(c, "invalid request body")

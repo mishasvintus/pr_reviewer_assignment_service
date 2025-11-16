@@ -21,10 +21,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 
 // SetIsActive handles POST /users/setIsActive.
 func (h *UserHandler) SetIsActive(c *gin.Context) {
-	var req struct {
-		UserID   string `json:"user_id" binding:"required"`
-		IsActive bool   `json:"is_active" binding:"required"`
-	}
+	var req SetIsActiveRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		BadRequest(c, "invalid request body")
