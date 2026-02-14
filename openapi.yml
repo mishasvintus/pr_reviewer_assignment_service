@@ -83,7 +83,7 @@ components:
           type: boolean
     PullRequest:
       type: object
-      required: [ pull_request_id, pull_request_name, author_id, status, assigned_reviewers]
+      required: [ pull_request_id, pull_request_name, author_id, team_name, status, assigned_reviewers]
       properties:
         pull_request_id:
           type: string
@@ -91,6 +91,9 @@ components:
           type: string
         author_id:
           type: string
+        team_name:
+          type: string
+          description: Команда, ответственная за PR (для переназначения/добора ревьюеров)
         status:
           type: string
           enum: [OPEN, MERGED]
@@ -109,13 +112,15 @@ components:
           nullable: true
     PullRequestShort:
       type: object
-      required: [ pull_request_id, pull_request_name, author_id, status]
+      required: [ pull_request_id, pull_request_name, author_id, team_name, status]
       properties:
         pull_request_id:
           type: string
         pull_request_name:
           type: string
         author_id:
+          type: string
+        team_name:
           type: string
         status:
           type: string
@@ -274,6 +279,7 @@ paths:
                   pull_request_id: pr-1001
                   pull_request_name: Add search
                   author_id: u1
+                  team_name: backend
                   status: OPEN
                   assigned_reviewers: [u2, u3]
         '404':
@@ -319,6 +325,7 @@ paths:
                   pull_request_id: pr-1001
                   pull_request_name: Add search
                   author_id: u1
+                  team_name: backend
                   status: MERGED
                   assigned_reviewers: [u2, u3]
                   mergedAt: 2025-10-24T12:34:56Z
@@ -364,6 +371,7 @@ paths:
                   pull_request_id: pr-1001
                   pull_request_name: Add search
                   author_id: u1
+                  team_name: backend
                   status: OPEN
                   assigned_reviewers: [u3, u5]
                 replaced_by: u5
@@ -418,4 +426,5 @@ paths:
                   - pull_request_id: pr-1001
                     pull_request_name: Add search
                     author_id: u1
+                    team_name: backend
                     status: OPEN
