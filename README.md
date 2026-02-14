@@ -1,10 +1,36 @@
 # PR Reviewer Assignment Service
 
-Сервис для автоматического назначения ревьюверов на Pull Request'ы.
+Микросервис для автоматического назначения ревьюеров на Pull Request'ы: управление командами, пользователями и правилами выбора ревьюеров. REST API, состояние в PostgreSQL.
 
-## Запуск 
+---
 
-### Docker Compose (Сервис + PostgreSQL)
+## Стек
+
+- **Go 1.24**
+- **HTTP:** [Gin](https://github.com/gin-gonic/gin) 
+- **DB:** [lib/pq](https://github.com/lib/pq)
+- **Config:** [godotenv](https://github.com/joho/godotenv) 
+- **PostgreSQL** 
+- **Docker / Docker Compose** 
+
+---
+
+## Возможности
+
+- **Команды и пользователи** — создание команд с участниками, флаг активности пользователя (`is_active`). Пользователь с `is_active = false` не назначается ревьюером.
+- **PR с привязкой к команде** — при создании PR сохраняется команда автора (`team_name`). Все последующие действия (переназначение, добор ревьюеров) идут **из этой команды**, а не из текущей команды автора/ревьюера.
+- **Назначение ревьюеров** — при создании PR автоматически назначается до 2 активных ревьюеров из команды автора (автор исключается). Выбор случайный (crypto/rand).
+- **Переназначение** — замена одного ревьюера на другого из **команды PR**; автор и текущие ревьюеры исключаются.
+- **Добор ревьюеров** — если у PR меньше 2 ревьюеров, сервис может доназначить кандидатов из команды PR (используется при деактивации команды).
+- **Деактивация команды** — массовое отключение пользователей команды; у открытых PR ревьюеры из этой команды снимаются и при необходимости заменяются на участников команды PR.
+- **MERGED** — после перевода PR в статус MERGED изменения ревьюеров запрещены. Операция merge идемпотентна.
+- **Статистика** — общая сводка и разбивка по ревьюерам и авторам.
+
+---
+
+## Запуск
+
+### Всё в Docker (сервис + БД)
 
 ```bash
 make docker-up
@@ -12,102 +38,106 @@ make docker-up
 docker-compose up -d
 ```
 
-Сервис доступен на `http://localhost:8080`
+Сервис: **http://localhost:8080**
 
-### Локальный запуск
+### Локально (БД в Docker)
 
-1. Скопируйте `.env.example` в `.env`:
 ```bash
 cp .env.example .env
-```
-
-2. Запустите PostgreSQL:
-```bash
 docker-compose up -d postgres
+make run
 ```
 
-3. Запустите приложение:
-```bash
-make run
-# или
-go run ./cmd/api
-```
+---
 
 ## Переменные окружения
 
-Создайте `.env` файл на основе `.env.example`:
+| Переменная    | Описание           |
+|---------------|--------------------|
+| `SERVER_HOST` | Хост HTTP-сервера  |
+| `SERVER_PORT` | Порт (по умолчанию 8080) |
+| `DB_HOST`     | Хост PostgreSQL    |
+| `DB_PORT`     | Порт PostgreSQL    |
+| `DB_USER`     | Пользователь БД    |
+| `DB_PASSWORD` | Пароль БД          |
+| `DB_NAME`     | Имя базы           |
+| `DB_SSLMODE`  | Режим SSL (например `disable`) |
 
-```env
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8080
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=avito_user
-DB_PASSWORD=avito_password
-DB_NAME=avito_db
-DB_SSLMODE=disable
-```
+Пример: см. `.env.example`.
 
-## Makefile команды
+---
+
+## API
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | `/team/add` | Создать команду с участниками |
+| GET  | `/team/get?team_name=...` | Получить команду |
+| POST | `/team/deactivate` | Деактивировать команду |
+| POST | `/users/setIsActive` | Установить активность пользователя |
+| GET  | `/users/getReview?user_id=...` | Список PR, где пользователь ревьюер |
+| POST | `/pullRequest/create` | Создать PR и назначить ревьюеров |
+| POST | `/pullRequest/merge` | Перевести PR в MERGED |
+| POST | `/pullRequest/reassign` | Переназначить ревьюера |
+| GET  | `/stats` | Статистика |
+
+Полная спецификация: **openapi.yml**.
+
+---
+
+## Тестирование
 
 ```bash
-make build              # Собрать приложение
-make run                # Запустить локально
 make test-unit          # Unit-тесты (handlers, domain)
-make test-integration   # Integration-тесты (services, требует БД)
+make test-integration   # Интеграционные тесты (нужен PostgreSQL)
 make test-all           # Все тесты
-make test-coverage      # Покрытие тестами + HTML отчет
-make generate-mocks     # Сгенерировать моки для тестов
-make fmt                # Отформатировать код
-make lint               # Линтер (golangci-lint)
-make docker-up          # Запустить Docker Compose
-make docker-down        # Остановить Docker Compose
-make loadtest-burst     # Burst нагрузочное тестирование
-make loadtest-rampup    # Ramp-up нагрузочное тестирование
-make loadtest-all       # Все нагрузочные тесты
+make test-coverage      # Покрытие + HTML-отчёт (coverage.html)
+make generate-mocks     # Регенерация моков (mockery)
 ```
 
-## Реализовано
+Нагрузочные тесты (сервис должен быть запущен на `http://localhost:8080`):
 
-### Основные требования
-- Все эндпоинты из openapi.yml
-- Автоматическое назначение до 2 ревьюверов из команды автора
-- Переназначение ревьювера из команды заменяемого
-- Запрет изменения после MERGED
-- Идемпотентность операций Merge
-- Транзакции и консистентность данных (не требовалось, но я сделал всё конкурентно безопасным)
-- Индексы БД (не требовалось, но я сделал)
+```bash
+make loadtest-burst     # Burst-сценарий
+make loadtest-rampup    # Ramp-up
+make loadtest-all       # Все сценарии
+```
 
-### Тестирование
-- Unit-тесты (handlers, domain)
-- Integration-тесты (services) 
-- См. покрытие make test-coverage 
-- Нагрузочное тестирование (uniform, burst, ramp-up)
-- Все SLI требования выполнены (99.9% success rate, ≤300ms avg response)
+Целевые SLI: 99.9% успешных ответов, среднее время ответа ≤300 ms.
 
-## API Endpoints
+---
 
-- `POST /team/add` - Создать команду
-- `GET /team/get?team_name=...` - Получить команду
-- `POST /team/deactivate` - Деактивировать команду (доп. задание)
-- `POST /users/setIsActive` - Установить флаг активности
-- `GET /users/getReview?user_id=...` - Получить PR'ы пользователя
-- `POST /pullRequest/create` - Создать PR и назначить ревьюверов
-- `POST /pullRequest/merge` - Пометить PR как MERGED
-- `POST /pullRequest/reassign` - Переназначить ревьювера
-- `GET /stats` - Получить статистику (доп. задание)
+## Сборка и код
 
-Полная спецификация: `openapi.yml` (кроме добавленных эндпоинтов)
+```bash
+make build    # Сборка бинарника в bin/api
+make fmt      # Форматирование
+make lint     # golangci-lint
+make clean    # Удаление bin/, coverage-файлов
+```
+
+---
+
+## Структура проекта
+
+```
+cmd/api/           — точка входа, конфиг, роутер
+internal/
+  config/          — загрузка конфигурации из env
+  domain/          — доменные модели (User, Team, PullRequest, PRStatus)
+  handler/         — HTTP-обработчики, запросы/ответы
+  repository/      — работа с БД (pr, user, team, stats)
+  router/          — маршруты Gin
+  service/         — бизнес-логика (команды, пользователи, PR, статистика, выбор ревьюеров)
+migrations/        — SQL-миграции (up/down)
+docs/              — DECISIONS.md, schema.dbml
+tests/             — unit, integration, stress
+openapi.yml        — спецификация API
+```
+
+---
 
 ## Документация
 
-- `docs/DECISIONS.md` - Принятые мной решения 
-- `docs/schema.dbml` - Схема базы данных
-
-## Дополнительные задания
-
-- Нагрузочное тестирование (обычное, burst, ramp-up)  
-- Интеграционное тестирование (services + PostgreSQL)  
-- Endpoint статистики (`GET /stats`)  
-- Массовая деактивация пользователей (`POST /team/deactivate`)  
-- Конфигурация линтера (golangci-lint)
+- **docs/DECISIONS.md** — принятые решения (поведение при конфликтах, алгоритмы выбора ревьюеров, идемпотентность merge и т.п.).
+- **docs/schema.dbml** — схема БД (удобно открыть в [dbdiagram.io](https://dbdiagram.io)).

@@ -69,6 +69,7 @@ func (h *UserHandler) GetReview(c *gin.Context) {
 			PullRequestID:   p.PullRequestID,
 			PullRequestName: p.PullRequestName,
 			AuthorID:        p.AuthorID,
+			TeamName:        p.TeamName,
 			Status:          string(p.Status),
 		}
 	}

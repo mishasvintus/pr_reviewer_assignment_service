@@ -42,7 +42,7 @@ func TestPRHandler_MergePR(t *testing.T) {
 					PullRequestName:   "Fix bug",
 					AuthorID:          "author1",
 					Status:            domain.StatusMerged,
-					AssignedReviewers: []string{"reviewer1"},
+					AssignedReviewersIDs: []string{"reviewer1"},
 					CreatedAt:         &now,
 					MergedAt:          &mergedAt,
 				}, nil)
@@ -158,7 +158,7 @@ func TestPRHandler_CreatePR(t *testing.T) {
 					PullRequestName:   "Fix bug",
 					AuthorID:          "author1",
 					Status:            domain.StatusOpen,
-					AssignedReviewers: []string{"reviewer1", "reviewer2"},
+					AssignedReviewersIDs: []string{"reviewer1", "reviewer2"},
 					CreatedAt:         &now,
 				}, nil)
 			},
@@ -315,7 +315,7 @@ func TestPRHandler_ReassignPR(t *testing.T) {
 					PullRequestName:   "Fix bug",
 					AuthorID:          "author1",
 					Status:            domain.StatusOpen,
-					AssignedReviewers: []string{"new_reviewer"},
+					AssignedReviewersIDs: []string{"new_reviewer"},
 					CreatedAt:         &now,
 				}, "new_reviewer", nil)
 			},

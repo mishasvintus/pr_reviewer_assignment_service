@@ -49,16 +49,17 @@ func (a *ReviewerAssigner) SelectReviewers(teammates []domain.User) ([]string, e
 	return reviewers, nil
 }
 
-// SelectReassignReviewers selects up to 2 new reviewers, excluding current ones.
-func (a *ReviewerAssigner) SelectReassignReviewers(teammates []domain.User, excludeIDs []string) ([]string, error) {
-	excludeMap := make(map[string]struct{})
-	for _, id := range excludeIDs {
-		excludeMap[id] = struct{}{}
+// SelectReassignReviewers selects up to 2 new reviewers, excluding author and currently assigned reviewers.
+func (a *ReviewerAssigner) SelectReassignReviewers(teammates []domain.User, authorID string, assignedReviewers []string) ([]string, error) {
+	excludeIDs := make(map[string]struct{})
+	excludeIDs[authorID] = struct{}{}
+	for _, id := range assignedReviewers {
+		excludeIDs[id] = struct{}{}
 	}
 
 	candidates := make([]domain.User, 0)
 	for _, user := range teammates {
-		if _, excluded := excludeMap[user.UserID]; !excluded {
+		if _, excluded := excludeIDs[user.UserID]; !excluded {
 			candidates = append(candidates, user)
 		}
 	}

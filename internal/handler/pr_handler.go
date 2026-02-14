@@ -124,8 +124,9 @@ func domainToPRResponse(pr *domain.PullRequest) *PRResponse {
 		PullRequestID:     pr.PullRequestID,
 		PullRequestName:   pr.PullRequestName,
 		AuthorID:          pr.AuthorID,
+		TeamName:          pr.TeamName,
 		Status:            string(pr.Status),
-		AssignedReviewers: pr.AssignedReviewers,
+		AssignedReviewers: pr.AssignedReviewersIDs,
 	}
 
 	if pr.CreatedAt != nil {

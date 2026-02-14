@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/lib/pq"
 )
@@ -25,19 +24,4 @@ func IsForeignKeyViolation(err error) bool {
 		return pqErr.Code == "23503"
 	}
 	return false
-}
-
-// ErrInactiveReviewer is returned when trying to assign an inactive user as a reviewer.
-type ErrInactiveReviewer struct {
-	UserID string
-}
-
-func (e *ErrInactiveReviewer) Error() string {
-	return fmt.Sprintf("reviewer %s is not active", e.UserID)
-}
-
-// IsInactiveReviewer checks if the error is an inactive reviewer error.
-func IsInactiveReviewer(err error) bool {
-	var inactiveErr *ErrInactiveReviewer
-	return errors.As(err, &inactiveErr)
 }

@@ -2,6 +2,7 @@ package pr
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,14 +10,17 @@ import (
 	"github.com/mishasvintus/avito_backend_internship/internal/repository"
 )
 
+// ErrReviewerNotAssigned is returned when the reviewer to replace is not assigned to the PR.
+var ErrReviewerNotAssigned = errors.New("reviewer is not assigned to this PR")
+
 // Create inserts a new pull request.
 func Create(exec repository.DBTX, pr *domain.PullRequest) error {
 	query := `
-		INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, created_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, team_name, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	now := time.Now()
-	_, err := exec.Exec(query, pr.PullRequestID, pr.PullRequestName, pr.AuthorID, pr.Status, now)
+	_, err := exec.Exec(query, pr.PullRequestID, pr.PullRequestName, pr.AuthorID, pr.TeamName, pr.Status, now)
 	if err != nil {
 		return fmt.Errorf("failed to create pull request: %w", err)
 	}
@@ -37,7 +41,7 @@ func InsertReviewer(exec repository.DBTX, prID, userID string) error {
 func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) {
 	// Get PR details
 	query := `
-		SELECT pull_request_id, pull_request_name, author_id, status, created_at, merged_at
+		SELECT pull_request_id, pull_request_name, author_id, team_name, status, created_at, merged_at
 		FROM pull_requests
 		WHERE pull_request_id = $1
 	`
@@ -46,6 +50,7 @@ func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) {
 		&p.PullRequestID,
 		&p.PullRequestName,
 		&p.AuthorID,
+		&p.TeamName,
 		&p.Status,
 		&p.CreatedAt,
 		&p.MergedAt,
@@ -82,14 +87,14 @@ func Get(exec repository.DBTX, prID string) (*domain.PullRequest, error) {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	p.AssignedReviewers = reviewers
+	p.AssignedReviewersIDs = reviewers
 	return &p, nil
 }
 
 // GetByUser retrieves all pull requests assigned to a user for review.
 func GetByUser(exec repository.DBTX, userID string) ([]domain.PullRequestShort, error) {
 	query := `
-		SELECT pr.pull_request_id, pr.pull_request_name, pr.author_id, pr.status
+		SELECT pr.pull_request_id, pr.pull_request_name, pr.author_id, pr.team_name, pr.status
 		FROM pull_requests pr
 		JOIN pr_reviewers rev ON pr.pull_request_id = rev.pull_request_id
 		WHERE rev.user_id = $1
@@ -104,7 +109,7 @@ func GetByUser(exec repository.DBTX, userID string) ([]domain.PullRequestShort, 
 	var prs []domain.PullRequestShort
 	for rows.Next() {
 		var p domain.PullRequestShort
-		if err := rows.Scan(&p.PullRequestID, &p.PullRequestName, &p.AuthorID, &p.Status); err != nil {
+		if err := rows.Scan(&p.PullRequestID, &p.PullRequestName, &p.AuthorID, &p.TeamName, &p.Status); err != nil {
 			return nil, fmt.Errorf("failed to scan pull request: %w", err)
 		}
 		prs = append(prs, p)
@@ -143,16 +148,6 @@ func UpdateStatusToMerged(exec repository.DBTX, prID string) error {
 	return nil
 }
 
-// DeleteReviewers removes all reviewers from a pull request.
-func DeleteReviewers(exec repository.DBTX, prID string) error {
-	query := `DELETE FROM pr_reviewers WHERE pull_request_id = $1`
-	_, err := exec.Exec(query, prID)
-	if err != nil {
-		return fmt.Errorf("failed to delete reviewers: %w", err)
-	}
-	return nil
-}
-
 // DeleteReviewer removes a specific reviewer from a pull request.
 func DeleteReviewer(exec repository.DBTX, prID, userID string) error {
 	query := `DELETE FROM pr_reviewers WHERE pull_request_id = $1 AND user_id = $2`
@@ -163,15 +158,27 @@ func DeleteReviewer(exec repository.DBTX, prID, userID string) error {
 	return nil
 }
 
-// Exists checks if a pull request exists.
-func Exists(exec repository.DBTX, prID string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM pull_requests WHERE pull_request_id = $1)`
-	err := exec.QueryRow(query, prID).Scan(&exists)
+// ReplaceReviewer atomically replaces oldReviewerID with newReviewerID for the given PR.
+// Returns ErrReviewerNotAssigned if oldReviewerID was not assigned to this PR.
+func ReplaceReviewer(exec repository.DBTX, prID, oldReviewerID, newReviewerID string) error {
+	query := `
+		WITH deleted AS (
+			DELETE FROM pr_reviewers
+			WHERE pull_request_id = $1 AND user_id = $2
+			RETURNING pull_request_id
+		)
+		INSERT INTO pr_reviewers (pull_request_id, user_id)
+		SELECT $1, $3 FROM deleted
+	`
+	result, err := exec.Exec(query, prID, oldReviewerID, newReviewerID)
 	if err != nil {
-		return false, fmt.Errorf("failed to check pull request existence: %w", err)
+		return fmt.Errorf("failed to replace reviewer: %w", err)
 	}
-	return exists, nil
+	rows, _ := result.RowsAffected()
+	if rows != 1 {
+		return ErrReviewerNotAssigned
+	}
+	return nil
 }
 
 // GetStatus returns the status of a pull request.
@@ -188,13 +195,3 @@ func GetStatus(exec repository.DBTX, prID string) (domain.PRStatus, error) {
 	return status, nil
 }
 
-// IsReviewerAssigned checks if a user is assigned as a reviewer for a PR.
-func IsReviewerAssigned(exec repository.DBTX, prID, userID string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM pr_reviewers WHERE pull_request_id = $1 AND user_id = $2)`
-	err := exec.QueryRow(query, prID, userID).Scan(&exists)
-	if err != nil {
-		return false, fmt.Errorf("failed to check reviewer assignment: %w", err)
-	}
-	return exists, nil
-}

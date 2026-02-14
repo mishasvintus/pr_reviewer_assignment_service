@@ -13,3 +13,6 @@ CREATE INDEX IF NOT EXISTS idx_pr_reviewers_user_id ON pr_reviewers(user_id);
 -- pr.GetByUser() - ORDER BY pr.created_at DESC
 CREATE INDEX IF NOT EXISTS idx_pull_requests_created_at ON pull_requests(created_at DESC);
 
+-- Reassign by PR's team (GetActiveByTeam / lookup by team_name)
+CREATE INDEX IF NOT EXISTS idx_pull_requests_team_name ON pull_requests(team_name);
+

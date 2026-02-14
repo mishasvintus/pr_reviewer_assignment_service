@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/mishasvintus/avito_backend_internship/internal/domain"
@@ -26,7 +27,7 @@ func NewPRService(db *sql.DB, assigner *ReviewerAssigner) *PRService {
 
 // CreatePR creates a new pull request and assigns up to 2 reviewers.
 func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest, error) {
-	_, err := user.Get(s.db, authorID)
+	author, err := user.Get(s.db, authorID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrPRAuthorNotFound
@@ -51,11 +52,12 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 	defer func() { _ = tx.Rollback() }()
 
 	pullRequest := &domain.PullRequest{
-		PullRequestID:     prID,
-		PullRequestName:   prName,
-		AuthorID:          authorID,
-		Status:            domain.StatusOpen,
-		AssignedReviewers: reviewers,
+		PullRequestID:        prID,
+		PullRequestName:      prName,
+		AuthorID:             authorID,
+		TeamName:             author.TeamName,
+		Status:               domain.StatusOpen,
+		AssignedReviewersIDs: reviewers,
 	}
 
 	if err := pr.Create(tx, pullRequest); err != nil {
@@ -100,6 +102,47 @@ func (s *PRService) CreatePR(prID, prName, authorID string) (*domain.PullRequest
 	return fullPR, nil
 }
 
+const maxReviewers = 2
+
+// ReplenishReviewers ensures the PR has up to maxReviewers reviewers from its team.
+// Does nothing if PR already has >= maxReviewers or is not OPEN.
+func (s *PRService) ReplenishReviewers(exec repository.DBTX, prID string) error {
+	pullRequest, err := pr.Get(exec, prID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return fmt.Errorf("failed to get PR: %w", err)
+	}
+	if pullRequest.Status != domain.StatusOpen {
+		return nil
+	}
+	reviewerCount := len(pullRequest.AssignedReviewersIDs)
+	if reviewerCount >= maxReviewers {
+		return nil
+	}
+
+	candidates, err := user.GetActiveByTeam(exec, pullRequest.TeamName)
+	if err != nil {
+		return fmt.Errorf("failed to get active users in PR team: %w", err)
+	}
+	newReviewers, err := s.assigner.SelectReassignReviewers(candidates, pullRequest.AuthorID, pullRequest.AssignedReviewersIDs)
+	if err != nil || len(newReviewers) == 0 {
+		return nil
+	}
+
+	need := min(maxReviewers - reviewerCount, len(newReviewers))
+
+	newReviewers = newReviewers[:need]
+
+	for _, reviewer := range newReviewers {
+		if err := pr.InsertReviewer(exec, prID, reviewer); err != nil {
+			return fmt.Errorf("failed to insert reviewer: %w", err)
+		}
+	}
+	return nil
+}
+
 // MergePR merges a pull request.
 // Idempotent: if already merged, returns current state without error.
 func (s *PRService) MergePR(prID string) (*domain.PullRequest, error) {
@@ -129,6 +172,7 @@ func (s *PRService) MergePR(prID string) (*domain.PullRequest, error) {
 }
 
 // ReassignPR replaces one specific reviewer with a new one.
+// New reviewer is chosen from the PR's responsible team (team_name).
 // Returns the updated PR and the new reviewer's ID.
 func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest, string, error) {
 	pullRequest, err := pr.Get(s.db, prID)
@@ -139,17 +183,12 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 		return nil, "", fmt.Errorf("failed to get pull request: %w", err)
 	}
 
-	teammates, err := user.GetActiveTeammates(s.db, oldReviewerID)
+	candidates, err := user.GetActiveByTeam(s.db, pullRequest.TeamName)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get teammates: %w", err)
+		return nil, "", fmt.Errorf("failed to get active users in PR team: %w", err)
 	}
 
-	// Exclude all current reviewers AND author
-	excludeIDs := make([]string, 0, len(pullRequest.AssignedReviewers)+1)
-	excludeIDs = append(excludeIDs, pullRequest.AssignedReviewers...)
-	excludeIDs = append(excludeIDs, pullRequest.AuthorID)
-
-	newReviewers, err := s.assigner.SelectReassignReviewers(teammates, excludeIDs)
+	newReviewers, err := s.assigner.SelectReassignReviewers(candidates, pullRequest.AuthorID, pullRequest.AssignedReviewersIDs)
 	if err != nil || len(newReviewers) == 0 {
 		return nil, "", ErrNoCandidate
 	}
@@ -173,24 +212,14 @@ func (s *PRService) ReassignPR(prID, oldReviewerID string) (*domain.PullRequest,
 		return nil, "", ErrPRMerged
 	}
 
-	isAssigned, err := pr.IsReviewerAssigned(tx, prID, oldReviewerID)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to check reviewer assignment: %w", err)
-	}
-
-	if !isAssigned {
-		return nil, "", ErrReviewerNotAssigned
-	}
-
-	if err := pr.DeleteReviewer(tx, prID, oldReviewerID); err != nil {
-		return nil, "", fmt.Errorf("failed to delete old reviewer: %w", err)
-	}
-
-	if err := pr.InsertReviewer(tx, prID, newReviewerID); err != nil {
+	if err := pr.ReplaceReviewer(tx, prID, oldReviewerID, newReviewerID); err != nil {
+		if errors.Is(err, pr.ErrReviewerNotAssigned) {
+			return nil, "", ErrReviewerNotAssigned
+		}
 		if repository.IsForeignKeyViolation(err) {
 			return nil, "", ErrPRAuthorNotFound
 		}
-		return nil, "", fmt.Errorf("failed to assign reviewer: %w", err)
+		return nil, "", fmt.Errorf("failed to replace reviewer: %w", err)
 	}
 
 	// Verify new reviewer is active

@@ -30,9 +30,9 @@ func main() {
 	defer func() { _ = db.Close() }()
 
 	reviewerAssigner := service.NewReviewerAssigner()
-	teamService := service.NewTeamService(db)
-	userService := service.NewUserService(db)
 	prService := service.NewPRService(db, reviewerAssigner)
+	teamService := service.NewTeamService(db, prService)
+	userService := service.NewUserService(db)
 	statsService := service.NewStatsService(db)
 
 	teamHandler := handler.NewTeamHandler(teamService)

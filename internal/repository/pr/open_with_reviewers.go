@@ -6,17 +6,11 @@ import (
 	"github.com/mishasvintus/avito_backend_internship/internal/repository"
 )
 
-// PRWithReviewer represents a PR with one of its reviewers.
-type PRWithReviewer struct {
-	PullRequestID string
-	AuthorID      string
-	ReviewerID    string
-}
-
-// GetOpenPRsWithReviewersFromTeam returns all open PRs that have at least one reviewer from the specified team.
-func GetOpenPRsWithReviewersFromTeam(exec repository.DBTX, teamName string) ([]PRWithReviewer, error) {
+// GetOpenPRsWithReviewersFromTeam returns open PRs that have at least one reviewer from the specified team.
+// Map: prID -> list of reviewer IDs from that team.
+func GetOpenPRsWithReviewersFromTeam(exec repository.DBTX, teamName string) (map[string][]string, error) {
 	query := `
-		SELECT DISTINCT pr.pull_request_id, pr.author_id, rev.user_id as reviewer_id
+		SELECT pr.pull_request_id, rev.user_id
 		FROM pull_requests pr
 		JOIN pr_reviewers rev ON pr.pull_request_id = rev.pull_request_id
 		JOIN users u ON rev.user_id = u.user_id
@@ -28,18 +22,18 @@ func GetOpenPRsWithReviewersFromTeam(exec repository.DBTX, teamName string) ([]P
 	}
 	defer func() { _ = rows.Close() }()
 
-	var result []PRWithReviewer
+	byPR := make(map[string][]string)
 	for rows.Next() {
-		var item PRWithReviewer
-		if err := rows.Scan(&item.PullRequestID, &item.AuthorID, &item.ReviewerID); err != nil {
-			return nil, fmt.Errorf("failed to scan PR with reviewer: %w", err)
+		var prID, reviewerID string
+		if err := rows.Scan(&prID, &reviewerID); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		result = append(result, item)
+		byPR[prID] = append(byPR[prID], reviewerID)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	return result, nil
+	return byPR, nil
 }

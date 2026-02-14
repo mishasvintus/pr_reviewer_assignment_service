@@ -59,6 +59,7 @@ type PRResponse struct {
 	PullRequestID     string   `json:"pull_request_id"`
 	PullRequestName   string   `json:"pull_request_name"`
 	AuthorID          string   `json:"author_id"`
+	TeamName          string   `json:"team_name"`
 	Status            string   `json:"status"`
 	AssignedReviewers []string `json:"assigned_reviewers"`
 	CreatedAt         string   `json:"createdAt,omitempty"`
@@ -82,6 +83,7 @@ type PRShortResponse struct {
 	PullRequestID   string `json:"pull_request_id"`
 	PullRequestName string `json:"pull_request_name"`
 	AuthorID        string `json:"author_id"`
+	TeamName        string `json:"team_name"`
 	Status          string `json:"status"`
 }
 

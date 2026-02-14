@@ -12,12 +12,13 @@ import (
 
 // TeamService handles team business logic.
 type TeamService struct {
-	db *sql.DB
+	db        *sql.DB
+	prService *PRService
 }
 
 // NewTeamService creates a new team service.
-func NewTeamService(db *sql.DB) *TeamService {
-	return &TeamService{db: db}
+func NewTeamService(db *sql.DB, prService *PRService) *TeamService {
+	return &TeamService{db: db, prService: prService}
 }
 
 // CreateTeam creates a new team with members in a single transaction.
@@ -109,53 +110,30 @@ func (s *TeamService) DeactivateTeam(teamName string) error {
 		return fmt.Errorf("failed to deactivate team: %w", err)
 	}
 
-	// 2. Find all open PRs with reviewers from this team
-	prsWithReviewers, err := pr.GetOpenPRsWithReviewersFromTeam(tx, teamName)
+	// 2. Find open PRs that have reviewers from this team 
+	prReviewers, err := pr.GetOpenPRsWithReviewersFromTeam(tx, teamName)
 	if err != nil {
 		return fmt.Errorf("failed to get open PRs: %w", err)
 	}
 
-	// 3. Reassign reviewer for each PR
-	for _, prWithRev := range prsWithReviewers {
-		// Remove old reviewer
-		if err := pr.DeleteReviewer(tx, prWithRev.PullRequestID, prWithRev.ReviewerID); err != nil {
-			return fmt.Errorf("failed to delete reviewer: %w", err)
+	// 3. For each PR: remove reviewers from the team, then replenish from PR's team if needed
+	for prID, reviewerIDs := range prReviewers {
+		for _, reviewerID := range reviewerIDs {
+			if err := pr.DeleteReviewer(tx, prID, reviewerID); err != nil {
+				return fmt.Errorf("failed to delete reviewer: %w", err)
+			}
 		}
 
-		// Get PR details
-		pullRequest, err := pr.Get(tx, prWithRev.PullRequestID)
+		pullRequest, err := pr.Get(tx, prID)
 		if err != nil {
 			return fmt.Errorf("failed to get PR: %w", err)
 		}
-
-		// Get active teammates of author (already excludes author)
-		teammates, err := user.GetActiveTeammates(tx, prWithRev.AuthorID)
-		if err != nil {
-			return fmt.Errorf("failed to get teammates: %w", err)
+		if pullRequest.TeamName == teamName {
+			continue
 		}
-
-		// Filter out already assigned reviewers
-		var candidates []string
-		for _, teammate := range teammates {
-			isAssigned := false
-			for _, assignedID := range pullRequest.AssignedReviewers {
-				if teammate.UserID == assignedID {
-					isAssigned = true
-					break
-				}
-			}
-			if !isAssigned {
-				candidates = append(candidates, teammate.UserID)
-			}
+		if err := s.prService.ReplenishReviewers(tx, prID); err != nil {
+			return err
 		}
-
-		// If there are candidates - assign the first one
-		if len(candidates) > 0 {
-			if err := pr.InsertReviewer(tx, prWithRev.PullRequestID, candidates[0]); err != nil {
-				return fmt.Errorf("failed to insert new reviewer: %w", err)
-			}
-		}
-		// If no candidates - PR remains with fewer reviewers
 	}
 
 	if err := tx.Commit(); err != nil {

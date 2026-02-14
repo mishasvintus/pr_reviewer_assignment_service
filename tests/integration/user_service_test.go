@@ -115,7 +115,7 @@ func TestUserService_GetUserReviews(t *testing.T) {
 		prID := "pr1"
 		prName := "Test PR"
 
-		require.NoError(t, createPRWithReviewer(db, prID, prName, authorID, reviewerID))
+		require.NoError(t, createPRWithReviewer(db, prID, prName, authorID, reviewerID, teamName))
 
 		reviews, err := userService.GetUserReviews(reviewerID)
 		require.NoError(t, err)
@@ -138,8 +138,8 @@ func TestUserService_GetUserReviews(t *testing.T) {
 		prName1 := "PR 2"
 		prName2 := "PR 3"
 
-		require.NoError(t, createPRWithReviewer(db, prID1, prName1, authorID, reviewerID))
-		require.NoError(t, createPRWithReviewer(db, prID2, prName2, authorID, reviewerID))
+		require.NoError(t, createPRWithReviewer(db, prID1, prName1, authorID, reviewerID, teamName))
+		require.NoError(t, createPRWithReviewer(db, prID2, prName2, authorID, reviewerID, teamName))
 
 		reviews, err := userService.GetUserReviews(reviewerID)
 		require.NoError(t, err)
@@ -148,11 +148,12 @@ func TestUserService_GetUserReviews(t *testing.T) {
 }
 
 // Helper function to create PR with reviewer
-func createPRWithReviewer(db *sql.DB, prID, prName, authorID, reviewerID string) error {
+func createPRWithReviewer(db *sql.DB, prID, prName, authorID, reviewerID, teamName string) error {
 	pullRequest := &domain.PullRequest{
 		PullRequestID:   prID,
 		PullRequestName: prName,
 		AuthorID:        authorID,
+		TeamName:        teamName,
 		Status:          domain.StatusOpen,
 	}
 	if err := pr.Create(db, pullRequest); err != nil {

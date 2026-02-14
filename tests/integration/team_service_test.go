@@ -19,7 +19,8 @@ func TestTeamService_CreateTeam(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	defer func() { _ = tests.CleanupTestDB(db) }()
 
-	teamService := service.NewTeamService(db)
+	prService := service.NewPRService(db, service.NewReviewerAssigner())
+	teamService := service.NewTeamService(db, prService)
 
 	tests := []struct {
 		name          string
@@ -114,7 +115,8 @@ func TestTeamService_GetTeam(t *testing.T) {
 		IsActive: false,
 	}))
 
-	teamService := service.NewTeamService(db)
+	prService := service.NewPRService(db, service.NewReviewerAssigner())
+	teamService := service.NewTeamService(db, prService)
 
 	tests := []struct {
 		name          string

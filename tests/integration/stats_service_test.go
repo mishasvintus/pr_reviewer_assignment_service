@@ -76,18 +76,21 @@ func TestStatsService_GetStatistics(t *testing.T) {
 			PullRequestID:   prID1,
 			PullRequestName: "PR 1",
 			AuthorID:        authorID,
+			TeamName:        teamName1,
 			Status:          domain.StatusOpen,
 		}))
 		require.NoError(t, pr.Create(db, &domain.PullRequest{
 			PullRequestID:   prID2,
 			PullRequestName: "PR 2",
 			AuthorID:        authorID,
+			TeamName:        teamName1,
 			Status:          domain.StatusOpen,
 		}))
 		require.NoError(t, pr.Create(db, &domain.PullRequest{
 			PullRequestID:   prID3,
 			PullRequestName: "PR 3",
 			AuthorID:        reviewerID1,
+			TeamName:        teamName1,
 			Status:          domain.StatusMerged,
 		}))
 
